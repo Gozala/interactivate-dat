@@ -109,7 +109,7 @@ export var node = nodeNS.bind(null, null)
 // KEYED NODE
 
 class KeyedNode {
-  constructor() {
+  constructor(tag, facts, kids, namespace, descendantsCount) {
     this.$ = __2_KEYED_NODE
     this.__tag = tag
     this.__facts = facts
@@ -122,30 +122,28 @@ class KeyedNode {
   }
 }
 
-export const keyedNodeNS = (namespace, tag) => {
-  return (factList, kidList) => {
-    for (
-      var kids = [], descendantsCount = 0;
-      kidList.b;
-      kidList = kidList.b // WHILE_CONS
-    ) {
-      var kid = kidList.a
-      descendantsCount += kid.b.__descendantsCount || 0
-      kids.push(kid)
-    }
-    descendantsCount += kids.length
-
-    return new KeyedNode(
-      tag,
-      organizeFacts(factList),
-      kids,
-      namespace,
-      descendantsCount
-    )
+export const keyedNodeNS = (namespace, tag, factList, kidList) => {
+  for (
+    var kids = [], descendantsCount = 0, index = 0;
+    kidList.length > index;
+    index++
+  ) {
+    var kid = kidList[index]
+    descendantsCount += kid[1].__descendantsCount || 0
+    kids.push(kid)
   }
+  descendantsCount += kids.length
+
+  return new KeyedNode(
+    tag,
+    organizeFacts(factList),
+    kids,
+    namespace,
+    descendantsCount
+  )
 }
 
-export var keyedNode = keyedNodeNS(undefined)
+export var keyedNode = keyedNodeNS.bind(null, null)
 
 // CUSTOM
 
@@ -555,7 +553,7 @@ function render(doc, vNode, eventNode) {
   for (var kids = vNode.__kids, i = 0; i < kids.length; i++) {
     appendChild(
       domNode,
-      render(doc, tag === __2_NODE ? kids[i] : kids[i].b, eventNode)
+      render(doc, tag === __2_NODE ? kids[i] : kids[i][1], eventNode)
     )
   }
 
@@ -618,7 +616,9 @@ function applyStyles(domNode, styles) {
 function applyAttrs(domNode, attrs) {
   for (var key in attrs) {
     var value = attrs[key]
-    value != null ? domNode.setAttribute(key, value) : domNode.removeAttribute(key)
+    value != null
+      ? domNode.setAttribute(key, value)
+      : domNode.removeAttribute(key)
   }
 }
 
@@ -1035,10 +1035,8 @@ function diffKeyedKids(xParent, yParent, patches, rootIndex) {
     var x = xKids[xIndex]
     var y = yKids[yIndex]
 
-    var xKey = x.a
-    var yKey = y.a
-    var xNode = x.b
-    var yNode = y.b
+    var [xKey, xNode] = x
+    var [yKey, yNode] = y
 
     // check if keys match
 
@@ -1058,14 +1056,14 @@ function diffKeyedKids(xParent, yParent, patches, rootIndex) {
     var yNext = yKids[yIndex + 1]
 
     if (xNext) {
-      var xNextKey = xNext.a
-      var xNextNode = xNext.b
+      var xNextKey = xNext[0]
+      var xNextNode = xNext[1]
       var oldMatch = yKey === xNextKey
     }
 
     if (yNext) {
-      var yNextKey = yNext.a
-      var yNextNode = yNext.b
+      var yNextKey = yNext[0]
+      var yNextNode = yNext[1]
       var newMatch = xKey === yNextKey
     }
 
@@ -1136,8 +1134,8 @@ function diffKeyedKids(xParent, yParent, patches, rootIndex) {
   while (xIndex < xLen) {
     index++
     var x = xKids[xIndex]
-    var xNode = x.b
-    removeNode(changes, localPatches, x.a, xNode, index)
+    var xNode = x[1]
+    removeNode(changes, localPatches, x[0], xNode, index)
     index += xNode.__descendantsCount || 0
     xIndex++
   }
@@ -1145,7 +1143,7 @@ function diffKeyedKids(xParent, yParent, patches, rootIndex) {
   while (yIndex < yLen) {
     var endInserts = endInserts || []
     var y = yKids[yIndex]
-    insertNode(changes, localPatches, y.a, y.b, undefined, endInserts)
+    insertNode(changes, localPatches, y[0], y[1], undefined, endInserts)
     yIndex++
   }
 
@@ -1322,7 +1320,7 @@ function addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode) {
   var childNodes = domNode.childNodes
   for (var j = 0; j < vKids.length; j++) {
     low++
-    var vKid = tag === __2_NODE ? vKids[j] : vKids[j].b
+    var vKid = tag === __2_NODE ? vKids[j] : vKids[j][1]
     var nextLow = low + (vKid.__descendantsCount || 0)
     if (low <= index && index <= nextLow) {
       i = addDomNodesHelp(
@@ -1552,7 +1550,7 @@ function dekey(keyedNode) {
   var len = keyedKids.length
   var kids = new Array(len)
   for (var i = 0; i < len; i++) {
-    kids[i] = keyedKids[i].b
+    kids[i] = keyedKids[i][1]
   }
 
   return {

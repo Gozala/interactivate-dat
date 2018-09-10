@@ -36,6 +36,7 @@ const setHTMLAttribute = name => /*::<a>*/ (
 ) /*:Attribute<a>*/ => attribute(name, value)
 
 export const src = setHTMLAttribute("src")
+export const srcset = setHTMLAttribute("srcset")
 export const alt = setHTMLAttribute("alt")
 export const href = setHTMLAttribute("href")
 export const id = setHTMLAttribute("id")

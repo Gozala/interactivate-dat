@@ -2,7 +2,7 @@
 
 import { nofx, fx, batch } from "../elm/fx.js"
 import { text, h3, pre, main, node, doc, body } from "../elm/element.js"
-import { attribute, textContent } from "../elm/attribute.js"
+import { className } from "../elm/attribute.js"
 import { never } from "../elm/basics.js"
 
 import * as Data from "./Main/Data.js"
@@ -15,10 +15,14 @@ export type Model = Data.Model
 export type Message = Inbox.Message
 */
 
-export const init = (options /*:Object*/, url /*:URL*/) => {
-  const path = url.pathname.substr(1)
-  const [notebook, fx] = path === "" ? Notebook.init() : Notebook.load(path)
-  return [Data.init(notebook), fx.map(Inbox.notebook)]
+export const init = (options /*:?{state:Model}*/, url /*:URL*/) => {
+  if (options) {
+    return [options.state, nofx]
+  } else {
+    const path = url.pathname.substr(1)
+    const [notebook, fx] = path === "" ? Notebook.init() : Notebook.load(path)
+    return [Data.init(notebook), fx.map(Inbox.notebook)]
+  }
 }
 
 export const update = (message /*:Message*/, state /*:Model*/) => {
@@ -56,6 +60,12 @@ const receive = (message, state) => {
 }
 
 export const view = (state /*:Model*/) =>
-  doc("", body([], [node("code-block", [attribute("source", "hello")])]))
+  doc(
+    "",
+    body(
+      [className("relative sans-serif")],
+      [Notebook.view(state.notebook).map(Inbox.notebook)]
+    )
+  )
 
 export const { onInternalURLRequest, onExternalURLRequest, onURLChange } = Inbox

@@ -22,6 +22,21 @@ const none /*:Effect<any>*/ = {
   }
 }
 
+class Send /*::<a> implements Effect<a>*/ {
+  /*::
+  message:a
+  */
+  constructor(message /*:a*/) {
+    this.message = message
+  }
+  perform(main /*:Port<a>*/) {
+    main.send(this.message)
+  }
+  map /*::<b>*/(tag /*:a => b*/) /*:Effect<b>*/ {
+    return new Tagged(this, tag)
+  }
+}
+
 class FX /*::<a, value>*/ {
   /*::
   task:Task<value>
@@ -105,6 +120,9 @@ export const fx = /*::<value, message>*/ (
   ok /*:value => ?message*/ = nothing,
   error /*:Error => ?message*/ = warn
 ) /*:Effect<message>*/ => new FX(task, ok, error)
+
+export const send = /*::<a>*/ (message /*:a*/) /*:Effect<a>*/ =>
+  new Send(message)
 
 export const batch = /*::<a>*/ (...fx /*:Effect<a>[]*/) /*:Effect<a>*/ =>
   new Batch(fx)

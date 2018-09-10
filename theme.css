@@ -1,3 +1,7 @@
+.CodeMirror {
+  height: auto;
+}
+
 .cm-s-interactivate.CodeMirror {
   background: none;
   color: var(--syntax_normal);
@@ -62,9 +66,4 @@ span.cm-variable-2 {
 }
 span.cm-error {
   background: var(--syntax_error);
-}
-
-.CodeMirror {
-  border: 1px solid #eee;
-  height: auto;
 }
