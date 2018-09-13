@@ -44,13 +44,7 @@
   --syntax_string: #9fdff7;
 }
 
-html {
-  width: 100vw;
-}
-body,
-html {
-  overflow: hidden;
-}
+
 body {
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
@@ -239,7 +233,7 @@ textarea {
   pointer-events: none;
 }
 
-.cell:focus-within {
+code-block:focus-within {
   background-color: var(--near-white);
 }
 

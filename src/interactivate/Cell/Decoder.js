@@ -23,6 +23,7 @@ export const escape = Decoder.form({
   })
 })
 
+export const focus = Decoder.ok({ message: { tag: "focus" } })
 export const split = Decoder.ok({ message: { tag: "split" } })
 // decoder((event /*:Event*/) => {
 //   const detail = readProperty(String, "detail", event)

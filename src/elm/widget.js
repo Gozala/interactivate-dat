@@ -13,9 +13,9 @@ export interface IO<message> {
 export type Transaction<message, state> = [state, IO<message>]
 
 export type Program<message, state, widget, options> = {
-  init: (options) => Transaction<message, state>,
-  update: (message, state) => Transaction<message, state>,
-  view: (state) => widget
+  +init: (options) => Transaction<message, state>,
+  +update: (message, state) => Transaction<message, state>,
+  +view: (state) => widget
 }
 
 export type Application<message, state, widget, options> = {

@@ -3,26 +3,17 @@
 import { never } from "../../elm/basics.js"
 
 /*::
-import * as Inbox from "../Cell/Inbox"
-import * as Outbox from "../Cell/Outbox"
+import type { ID } from "./Data.js"
+import * as Inbox from "../Cell/Inbox.js"
+import * as Outbox from "../Cell/Outbox.js"
 
 export type Message =
   | { tag: "LoadNotebook", value: string }
-  | { tag: "Cell", value:[string, Inbox.Message] }
-  | { tag: "Insert", value:{index:number, input:string}[]}
+  | { tag: "Cell", value:[ID, Inbox.Message] }
 */
 
-export const cell = (key /*:string*/) => (
+const route = (message /*:Message*/) => {}
+
+export const cell = (key /*:ID*/) => (
   value /*:Inbox.Message*/
 ) /*:Message*/ => ({ tag: "Cell", value: [key, value] })
-
-export const receive = (message /*:Outbox.Message*/) /*:Message*/ => {
-  switch (message.tag) {
-    case "Insert": {
-      return message
-    }
-    default: {
-      return never(message)
-    }
-  }
-}

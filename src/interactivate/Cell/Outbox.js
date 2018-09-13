@@ -2,12 +2,12 @@
 
 /*::
 export type Message =
-  | { tag:"Insert", value:{index:number, input:string}[] }
+  | { tag:"leave", value:-1|1 }
+  | { tag:"focus" }
+  | { tag:"insert", value:{input:string}[] }
 */
 
-export const insert = (
-  entries /*:{index:number, input:string}[]*/
-) /*:Message*/ => ({
-  tag: "Insert",
+export const insert = (entries /*:{input:string}[]*/) /*:Message*/ => ({
+  tag: "insert",
   value: entries
 })

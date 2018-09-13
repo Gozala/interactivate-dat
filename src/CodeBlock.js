@@ -148,6 +148,19 @@ export default class CodeBlock extends BaseElement {
     this.editor.setOption("extraKeys", this.navigationKeys)
     this.editor.on("changes", this.onChanges)
     this.editor.on("cursorActivity", this.onCursorActivity)
+
+    if (this.ownerDocument.activeElement === this) {
+      this.editor.focus()
+    }
+  }
+  setSelection(dir /*:-1|1*/) {
+    if (this.editor) {
+      const doc = this.editor.getDoc()
+      const line = dir > 0 ? doc.firstLine() : doc.lastLine()
+      const ch = dir > 0 ? 0 : doc.getLine(line).length
+      const position = { line, ch }
+      doc.setSelection(position, position)
+    }
   }
   onPreviousLine() {
     return this.maybeEscape("line", -1)
