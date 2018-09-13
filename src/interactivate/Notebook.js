@@ -13,7 +13,8 @@ import {
   header,
   div,
   h1,
-  h2
+  h2,
+  select
 } from "../elm/element.js"
 import {
   className,
@@ -47,9 +48,18 @@ export const update = (message /*:Message*/, state /*:Model*/) => {
       const [id, payload] = message.value
       return updateCell(state, id, payload)
     }
-    case "Insert": {
-      return [Data.insert(state, ...message.value), nofx]
-    }
+    // case "insert": {
+    //   debugger
+    //   return [Data.insert(message.value, state), nofx]
+    // }
+    // case "leave": {
+    //   const next = Data.changeCellSelection(message.value, true, state)
+    //   const id = Data.selectedCellID(next)
+    //   return [next, id == null ? nofx : fx(focus(`cell-${id}`))]
+    // }
+    // case "focus": {
+    //   return [state, nofx]
+    // }
     default: {
       return never(message)
     }
@@ -57,15 +67,62 @@ export const update = (message /*:Message*/, state /*:Model*/) => {
 }
 
 const updateCell = (state, id, message) => {
-  const cell = state.cells[id]
-  if (cell) {
-    const [cell2, fxIn, fxOut] = Cell.update(message, cell)
-    return [
-      Data.updateCell(state, id, cell2),
-      batch(fxIn.map(Inbox.cell(id)), fxOut.map(Inbox.receive))
-    ]
+  switch (message.tag) {
+    case "output":
+    case "change": {
+      const cell = Data.cellByID(id, state)
+      if (cell) {
+        const [cell2, fx] = Cell.update(message, cell)
+        return [Data.replaceCell(id, cell2, state), fx.map(Inbox.cell(id))]
+      } else {
+        return [state, nofx]
+      }
+    }
+    case "insert": {
+      return [Data.insert(id, 1, message.value, state), nofx]
+    }
+    case "focus": {
+      return [Data.selectByID(id, state), nofx]
+    }
+    case "leave": {
+      return setSelection(message.value, state)
+    }
+    case "split": {
+      const targetCell = Data.cellByID(id, state)
+      if (targetCell) {
+        const [cell, fx] = Cell.update(message, targetCell)
+        let data = Data.replaceCell(id, cell, state)
+
+        data =
+          targetCell === Data.lastCell(state)
+            ? Data.append([{ input: "" }], data)
+            : data
+
+        if (targetCell === Data.selectedCell(state)) {
+          const [next, fx2] = setSelection(1, data)
+          return [next, batch(fx.map(Inbox.cell(id)), fx2)]
+        } else {
+          return [data, fx.map(Inbox.cell(id))]
+        }
+      } else {
+        return [state, nofx]
+      }
+    }
+    default: {
+      return never(message)
+    }
+  }
+}
+
+const setSelection = (dir, state) => {
+  let data = Data.changeCellSelection(dir, true, state)
+  const selection = Data.selection(data)
+  if (selection) {
+    const [id, cell] = selection
+    const [cell2, fx] = Cell.setSelection(dir, id, cell)
+    return [Data.replaceCell(id, cell2, data), fx.map(Inbox.cell(id))]
   } else {
-    return [state, nofx]
+    return [data, nofx]
   }
 }
 
@@ -116,17 +173,10 @@ const viewDocument = state =>
   keyedNode(
     "main",
     [className("relative mh0-ns nr3 nl3 mt4")],
-    entries(state.cells).map(viewCell)
+    Data.cells(state).map(viewCell)
   )
 
-const viewCell = ([key, cell]) => [
+const viewCell = ([key, cell, focused]) => [
   key,
-  Cell.view(cell, key).map(Inbox.cell(key))
+  Cell.view(cell, `cell-${key}`, focused).map(Inbox.cell(key))
 ]
-
-export const entries = /*::<a>*/ (
-  dict /*:a*/
-) /*:Array<[$Keys<a>, $Values<a>]>*/ => {
-  const entries /*:any*/ = Object.entries(dict)
-  return entries
-}

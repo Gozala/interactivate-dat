@@ -1,55 +1,115 @@
 // @flow strict
 
 import * as Cell from "../Cell/Data.js"
+import * as SelectionMap from "../../Data/SelectionMap.js"
 
 /*::
+export type ID = SelectionMap.ID
 export type Model = {
   url:string;
   status:"loading"|"ready";
-  nextID:number;
-  cells:{[string]: Cell.Model};
+  cells:SelectionMap.SelectionMap<Cell.Model>;
 }
+
 */
 
-const notebook = (url, status, nextID = 0, cells = {}) => ({
+const notebook = (url, status, cells = SelectionMap.empty()) => ({
   url,
   status,
-  nextID,
   cells
 })
 
 export const init = () /*:Model*/ =>
-  insert(notebook("temp://", "ready"), {
-    index: 0,
-    input: "// Wellcome to your first notebook"
-  })
+  append(
+    [
+      {
+        input: "// Wellcome to your first notebook"
+      }
+    ],
+    notebook("temp://", "ready")
+  )
 
-export const insert = (
-  state /*:Model*/,
-  ...entries /*:{index:number, input:string}[]*/
+export const append = (
+  entries /*:{input:string}[]*/,
+  state /*:Model*/
 ) /*:Model*/ => {
-  let { nextID } = state
-  let cells = { ...state.cells }
-  for (const { index, input } of entries) {
-    const id = `c${++nextID}`
-    const cell = Cell.init(index, input)
-    cells[id] = cell
-  }
-  return { ...state, nextID, cells }
+  const cells = SelectionMap.append(
+    entries.map(({ input }) => Cell.init(input)),
+    state.cells
+  )
+
+  return { ...state, cells }
 }
 
-export const updateCell = (
-  state /*:Model*/,
-  id /*:string*/,
-  cell /*:Cell.Model*/
+export const insert = (
+  id /*:ID*/,
+  dir /*:1|-1*/,
+  entries /*:{input:string}[]*/,
+  state /*:Model*/
+) /*:Model*/ => {
+  const cells = SelectionMap.insert(
+    id,
+    dir,
+    entries.map(({ input }) => Cell.init(input)),
+    state.cells
+  )
+
+  return { ...state, cells }
+}
+
+export const replaceCell = (
+  id /*:ID*/,
+  cell /*:Cell.Model*/,
+  state /*:Model*/
 ) => ({
   ...state,
-  cells: { ...state.cells, [id]: cell }
+  cells: SelectionMap.replaceWith(
+    id,
+    maybeCell => (maybeCell ? cell : null),
+    state.cells
+  )
 })
+
+export const cellByID = (id /*:ID*/, state /*:Model*/) /*:?Cell.Model*/ =>
+  SelectionMap.valueByKey(id, state.cells)
 
 export const load = (location /*:string*/) /*:Model*/ => ({
   url: `dat://${location}`,
   status: "loading",
-  nextID: 0,
-  cells: {}
+  cells: SelectionMap.empty()
 })
+
+export const cells = (
+  state /*:Model*/
+) /*:Array<[ID, Cell.Model, boolean]>*/ => [
+  ...SelectionMap.entries(state.cells)
+]
+
+export const changeCellSelection = (
+  offset /*:number*/,
+  loop /*:boolean*/,
+  state /*:Model*/
+) => ({
+  ...state,
+  cells: SelectionMap.selectByOffset(offset, loop, state.cells)
+})
+
+export const selectByID = (id /*:ID*/, state /*:Model*/) => ({
+  ...state,
+  cells: SelectionMap.selectByKey(id, state.cells)
+})
+
+export const selectedCellID = (state /*:Model*/) /*:?ID*/ =>
+  SelectionMap.selectedKey(state.cells)
+
+export const selectedCell = (state /*:Model*/) /*:?Cell.Model*/ =>
+  SelectionMap.selectedValue(state.cells)
+
+export const selection = (state /*:Model*/) /*:?[ID, Cell.Model]*/ =>
+  SelectionMap.selectedEntry(state.cells)
+
+export const lastCell = (state /*:Model*/) /*:?Cell.Model*/ =>
+  SelectionMap.valueByIndex(-1, state.cells)
+
+export const firstCell = (state /*:Model*/) /*:?Cell.Model*/ =>
+  SelectionMap.valueByIndex(0, state.cells)

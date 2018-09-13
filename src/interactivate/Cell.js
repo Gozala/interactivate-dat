@@ -2,7 +2,7 @@
 
 import { keyedNode, node, on } from "../elm/virtual-dom.js"
 import { text, section, div, output } from "../elm/element.js"
-import { className, data, attribute, property } from "../elm/attribute.js"
+import { className, data, attribute, property, id } from "../elm/attribute.js"
 import { never, always } from "../elm/basics.js"
 import { nofx, fx, send, batch } from "../elm/fx.js"
 import { future } from "../elm/Future.js"
@@ -11,44 +11,63 @@ import * as Data from "./Cell/Data.js"
 import * as Inbox from "./Cell/Inbox.js"
 import * as Outbox from "./Cell/Outbox.js"
 import * as Decoder from "./Cell/Decoder.js"
+import * as FX from "./Cell/FX.js"
 
 /*::
+import type { Effect } from "../elm/fx.js"
 import type { Node } from "../elm/virtual-dom.js"
 export type Model = Data.Model
 export type Message = Inbox.Message
 */
 
-export const update = (message /*:Message*/, state /*:Model*/) => {
+export const update = (
+  message /*:Message*/,
+  state /*:Model*/
+) /*:[Model, Effect<Message>]*/ => {
   switch (message.tag) {
     case "change": {
       const { value } = message
-      const cell = Data.updateInput(state, value)
+      const cell = Data.updateInput(value, state)
       const [token, ...tokens] = tokenize(value)
-      const fx = token === value ? nofx : send(Inbox.change(token))
+      const fx = token === value ? null : send(Inbox.change(token))
       if (tokens.length === 0) {
-        return [cell, fx, nofx]
+        return [cell, fx ? fx : nofx]
       } else {
         const inserts = []
-        let index = cell.index
         for (const input of tokens) {
-          index += 1
-          inserts.push({ index, input })
+          inserts.push({ input })
         }
-        return [cell, fx, send(Outbox.insert(inserts))]
+        const insert = send(Outbox.insert(inserts))
+        return [cell, fx ? batch(fx, insert) : nofx]
       }
     }
     case "leave": {
-      console.log("THIS IS COOL !!", message)
-      return [state, nofx, nofx]
+      return [state, nofx]
     }
     case "split": {
-      console.log(message)
-      return [state, nofx, nofx]
+      return [state, fx(FX.evaluate("out", state.input), Inbox.output)]
+    }
+    case "focus": {
+      return [state, nofx]
+    }
+    case "output": {
+      return [Data.updateOutput(message.value, state), nofx]
+    }
+    case "insert": {
+      return [state, nofx]
     }
     default: {
       return never(message)
     }
   }
+}
+
+export const setSelection = (
+  direction /*:-1|1*/,
+  id /*:string*/,
+  state /*:Model*/
+) /*:[Model, Effect<Message>]*/ => {
+  return [state, fx(FX.setSelection(`cell-${id}`, direction))]
 }
 
 const tokenize = input => {
@@ -76,16 +95,22 @@ const CELL_PATTERN = /(^[A-Za-z_]\w*\s*\:.*$)/gm
 
 export const view = (
   state /*:Model*/,
-  status /*:string*/ = ""
-) /*:Node<Inbox.Message>*/ =>
+  key /*:string*/,
+  focused /*:boolean*/
+) /*:Node<Message>*/ =>
   section(
-    [data("index", `${state.index}`), className(`cell ${status}`)],
-    [viewCodeBlock(state.input), output([className("flex bb bb b--black-05")])]
+    [className(`cell bl ${focused ? "b--silver" : "b--transparent"}`)],
+    [viewCodeBlock(state.input, key), viewOutput(state.output, key)]
   )
 
-const viewCodeBlock = input =>
+const viewOutput = (result, key) =>
+  node("inspect-block", [className("flex"), property("source", result)])
+
+const viewCodeBlock = (input, key) =>
   node("code-block", [
+    id(key),
     property("source", input),
+    on("focus", Decoder.focus),
     on("change", Decoder.change),
     on("escape", Decoder.escape),
     on("split", Decoder.split)
