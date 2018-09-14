@@ -75,6 +75,16 @@ export const replaceCell = (
   )
 })
 
+export const joinCell = (id /*:ID*/, dir /*:-1|1*/, state /*:Model*/) => {
+  const cells = SelectionMap.join(
+    (left, right) => Cell.init(`${left.input}\n${right.input}`, right.output),
+    id,
+    dir,
+    state.cells
+  )
+  return { ...state, cells }
+}
+
 export const cellByID = (id /*:ID*/, state /*:Model*/) /*:?Cell.Model*/ =>
   SelectionMap.valueByKey(id, state.cells)
 

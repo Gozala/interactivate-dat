@@ -7,9 +7,12 @@ export opaque type Model:{input:string, output:mixed} = {
 }
 */
 
-export const init = (input /*:string*/) /*:Model*/ => ({
+export const init = (
+  input /*:string*/,
+  output /*:mixed*/ = undefined
+) /*:Model*/ => ({
   input,
-  output: undefined
+  output
 })
 
 export const updateInput = (

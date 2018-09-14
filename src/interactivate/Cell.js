@@ -28,24 +28,37 @@ export const update = (
     case "change": {
       const { value } = message
       const cell = Data.updateInput(value, state)
-      const [token, ...tokens] = tokenize(value)
-      const fx = token === value ? null : send(Inbox.change(token))
-      if (tokens.length === 0) {
-        return [cell, fx ? fx : nofx]
-      } else {
-        const inserts = []
-        for (const input of tokens) {
-          inserts.push({ input })
+      const tokens = tokenize(value)
+      switch (tokens.length) {
+        case 0: {
+          return [cell, send(Inbox.join(1))]
         }
-        const insert = send(Outbox.insert(inserts))
-        return [cell, fx ? batch(fx, insert) : nofx]
+        case 1: {
+          return [cell, nofx]
+        }
+        default: {
+          const [token, ...rest] = tokens
+          const inserts = []
+          for (const input of rest) {
+            inserts.push({ input })
+          }
+          const replace = send(Inbox.change(token))
+          const insert = send(Outbox.insert(inserts))
+          return [cell, batch(replace, insert)]
+        }
       }
+    }
+    case "join": {
+      return [state, nofx]
     }
     case "leave": {
       return [state, nofx]
     }
     case "split": {
-      return [state, fx(FX.evaluate("out", state.input), Inbox.output)]
+      return [
+        state,
+        fx(FX.evaluate("out", state.input), Inbox.output, Inbox.output)
+      ]
     }
     case "focus": {
       return [state, nofx]
@@ -73,7 +86,7 @@ export const setSelection = (
   return [state, fx(FX.setSelection(`cell-${id}`, direction))]
 }
 
-const tokenize = input => {
+export const tokenize = (input /*:string*/) /*:string[]*/ => {
   const tokens = []
   let match = null
   let offset = 0
@@ -85,9 +98,7 @@ const tokenize = input => {
     offset = end
   }
 
-  if (offset === 0) {
-    tokens.push(input)
-  } else if (offset < input.length) {
+  if (offset > 0 && offset < input.length) {
     tokens.push(input.slice(offset))
   }
 

@@ -48,18 +48,6 @@ export const update = (message /*:Message*/, state /*:Model*/) => {
       const [id, payload] = message.value
       return updateCell(state, id, payload)
     }
-    // case "insert": {
-    //   debugger
-    //   return [Data.insert(message.value, state), nofx]
-    // }
-    // case "leave": {
-    //   const next = Data.changeCellSelection(message.value, true, state)
-    //   const id = Data.selectedCellID(next)
-    //   return [next, id == null ? nofx : fx(focus(`cell-${id}`))]
-    // }
-    // case "focus": {
-    //   return [state, nofx]
-    // }
     default: {
       return never(message)
     }
@@ -111,6 +99,9 @@ const updateCell = (state, id, message) => {
     case "remove": {
       const [data, fx] = setSelection(message.value, state)
       return [Data.removeCells([id], data), fx]
+    }
+    case "join": {
+      return [Data.joinCell(id, message.value, state), nofx]
     }
     default: {
       return never(message)

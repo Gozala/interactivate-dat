@@ -13,6 +13,7 @@ export type Message =
   | { tag:"focus" }
   | { tag:"output", value:mixed }
   | { tag:"insert", value:{input:string}[] }
+  | { tag:"join", value:Direction}
 */
 
 export const change = (value /*:string*/) /*:Message*/ => ({
@@ -23,4 +24,9 @@ export const change = (value /*:string*/) /*:Message*/ => ({
 export const output = (value /*:mixed*/) /*:Message*/ => ({
   tag: "output",
   value
+})
+
+export const join = (dir /*:Direction*/) /*:Message*/ => ({
+  tag: "join",
+  value: dir
 })

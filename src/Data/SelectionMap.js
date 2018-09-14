@@ -1,13 +1,14 @@
 // @flow strict
 
 import * as Dict from "./Dictionary.js"
+import * as ImmutableArray from "./ImmutableArray.js"
 
 /*::
 export opaque type ID: string = string
 
 export opaque type SelectionMap<a> = {
   +nextID: number,
-  +index: ID[],
+  +index: ImmutableArray.ImmutableArray<ID>,
   +values: Dict.Dictionary<a>,
   +selectionIndex: number
 }
@@ -107,6 +108,15 @@ export const selectedKey = /*::<a>*/ (data /*:SelectionMap<a>*/) /*:?ID*/ =>
 export const selectedValue = /*::<a>*/ (data /*:SelectionMap<a>*/) /*:?a*/ => {
   const id = selectedKey(data)
   return id != null ? Dict.get(id, data.values) : null
+}
+
+export const keyByIndex = /*::<a>*/ (
+  n /*:number*/,
+  data /*:SelectionMap<a>*/
+) /*:?ID*/ => {
+  const { index } = data
+  const offset = n < 0 ? index.length + n : n
+  return index[offset]
 }
 
 export const valueByIndex = /*::<a>*/ (
@@ -243,6 +253,9 @@ export const entries = function* entries /*::<a>*/(
   }
 }
 
+export const count = /*::<a>*/ (data /*:SelectionMap<a>*/) /*: number*/ =>
+  data.index.length
+
 export const keys = /*::<a>*/ (data /*:SelectionMap<a>*/) /*: Iterable<ID>*/ =>
   data.index
 
@@ -264,20 +277,46 @@ export const replaceWith = /*::<a>*/ (
   return values === data.values ? data : { ...data, values }
 }
 
-// export interface SelectionMap<a> {
-//   // Mark an item as selected. This will select at most one item.
-//   // Any previously selected item will be unselected.
-//   select(a): SelectionMap<a>;
-//   deselect(): SelectionMap<a>;
-//   selectBy((a) => boolean): SelectionMap<a>;
-//   selectedValue(): ?a;
-//   selectedEntry(): ?[ID, a];
-//   updateSelected<param>((param, a) => a): SelectionMap<a>;
-//   map<b>((a) => b): SelectionMap<b>;
-//   filter((a) => boolean): SelectionMap<a>;
-//   keys(): Iterable<ID>;
-//   values(): Iterable<a>;
-//   entries(): Iterable<[ID, a, boolean]>;
-// }
+export const join = /*::<a>*/ (
+  join /*:(a, a) => a*/,
+  key /*:ID*/,
+  dir /*:-1|1*/,
+  data /*:SelectionMap<a>*/
+) /*:SelectionMap<a>*/ => {
+  const { index, selectionIndex, values } = data
+  if (index.length <= 1) {
+    return data
+  } else {
+    const position = index.indexOf(key)
+    const [leftIndex, rightIndex] =
+      dir > 0 ? [position, position + dir] : [position + dir, position]
 
-// export const fromArray = (values /*:a[]*/) /*:SelectionMap<a>*/ => {}
+    if (leftIndex < 0 || rightIndex > index.length) {
+      return data
+    } else {
+      const [leftKey, rightKey] = [index[leftIndex], index[rightIndex]]
+      const [left, right] = [
+        Dict.get(leftKey, values),
+        Dict.get(rightKey, values)
+      ]
+      if (left == null || right == null) {
+        return data
+      } else {
+        const [removeIndex, removeKey, updateKey] =
+          leftIndex !== selectionIndex
+            ? [leftIndex, leftKey, rightKey]
+            : [rightIndex, rightKey, leftKey]
+
+        return {
+          ...data,
+          index: ImmutableArray.remove(removeIndex, 1, index),
+          values: Dict.insert(
+            updateKey,
+            join(left, right),
+            Dict.remove(removeKey, values)
+          )
+        }
+      }
+    }
+  }
+}
