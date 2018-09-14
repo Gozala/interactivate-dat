@@ -23,6 +23,7 @@ class Service {
   requests:{[mixed]:{resolve(mixed):void, reject(mixed):void }}
   */
   constructor(url, worker, requestID) {
+    this.url = url
     this.worker = worker
     this.requestID = requestID
     this.requests = {}

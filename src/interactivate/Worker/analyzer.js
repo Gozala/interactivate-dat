@@ -45265,13 +45265,31 @@ const analyzeSource = (code, options = { sourceType: "module" }) =>
 
 self.onmessage = function(message) {
   const [id, source] = message.data
-  const { bindings, globals, labels } = analyzeSource(source)
+  try {
+    const { bindings, globals, labels } = analyzeSource(source)
 
-  self.postMessage([id, {
-    labels: Object.keys(labels),
-    bindings: Object.keys(bindings),
-    globals: Object.keys(globals)
-  }])
+    self.postMessage([
+      id,
+      {
+        ok: {
+          labels: Object.keys(labels),
+          bindings: Object.keys(bindings),
+          globals: Object.keys(globals)
+        }
+      }
+    ])
+  } catch(error) {
+    self.postMessage([
+      id,
+      {
+        error: {
+          name: error.name,
+          message: error.message,
+          loc: error.loc
+        }
+      }
+    ])
+  }
 }
 },{"@babel/parser":26,"@babel/traverse":38}],317:[function(require,module,exports){
 (function (global){
