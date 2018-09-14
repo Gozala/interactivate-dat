@@ -45264,14 +45264,14 @@ const analyzeSource = (code, options = { sourceType: "module" }) =>
   analyzeAST(parser.parse(code, options))
 
 self.onmessage = function(message) {
-  const { bindings, globals, labels } = analyzeSource(message.data.source)
+  const [id, source] = message.data
+  const { bindings, globals, labels } = analyzeSource(source)
 
-  self.postMessage({
-    id: message.data.id,
+  self.postMessage([id, {
     labels: Object.keys(labels),
     bindings: Object.keys(bindings),
     globals: Object.keys(globals)
-  })
+  }])
 }
 },{"@babel/parser":26,"@babel/traverse":38}],317:[function(require,module,exports){
 (function (global){
