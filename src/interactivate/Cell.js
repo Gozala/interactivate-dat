@@ -56,6 +56,9 @@ export const update = (
     case "insert": {
       return [state, nofx]
     }
+    case "remove": {
+      return [state, nofx]
+    }
     default: {
       return never(message)
     }
@@ -113,5 +116,6 @@ const viewCodeBlock = (input, key) =>
     on("focus", Decoder.focus),
     on("change", Decoder.change),
     on("escape", Decoder.escape),
-    on("split", Decoder.split)
+    on("split", Decoder.split),
+    on("delete", Decoder.remove)
   ])

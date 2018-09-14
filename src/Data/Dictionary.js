@@ -113,6 +113,33 @@ export const remove = /*::<a>*/ (
   }
 }
 
+export const removeBatch = /*::<a>*/ (
+  keys /*:string[] | number[]*/,
+  data /*:Dictionary<a>*/
+) /*:Dictionary<a>*/ => {
+  let result = null
+  for (const key of keys) {
+    if (data[key] != null) {
+      const dict = result == null ? (result = mutable(data)) : result
+      delete dict[key]
+    } else {
+      return data
+    }
+  }
+
+  // If it has more keys than we return new instance, otherwise just return
+  // empty
+  if (result == null) {
+    return data
+  } else {
+    for (const key in result) {
+      return result
+    }
+
+    return empty()
+  }
+}
+
 export const isEmpty = /*::<a>*/ (data /*:Dictionary<a>*/) /*:boolean*/ =>
   data === seed
 

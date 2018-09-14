@@ -108,6 +108,10 @@ const updateCell = (state, id, message) => {
         return [state, nofx]
       }
     }
+    case "remove": {
+      const [data, fx] = setSelection(message.value, state)
+      return [Data.removeCells([id], data), fx]
+    }
     default: {
       return never(message)
     }

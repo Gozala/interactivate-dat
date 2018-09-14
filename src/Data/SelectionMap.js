@@ -82,6 +82,25 @@ export const insert = /*::<a>*/ (
   return { selectionIndex, nextID, index, values }
 }
 
+export const remove = /*::<a>*/ (
+  ids /*:ID[]*/,
+  data /*:SelectionMap<a>*/
+) /*:SelectionMap<a>*/ => {
+  const index = data.index.slice()
+  let { selectionIndex } = data
+  for (const id of ids) {
+    const offset = index.indexOf(id)
+    if (offset === selectionIndex) {
+      selectionIndex = -1
+    }
+    index.splice(offset, 1)
+  }
+  const keys /*:string[]*/ = ids
+  const values = Dict.removeBatch(keys, data.values)
+
+  return { ...data, index, values }
+}
+
 export const selectedKey = /*::<a>*/ (data /*:SelectionMap<a>*/) /*:?ID*/ =>
   data.index[data.selectionIndex]
 

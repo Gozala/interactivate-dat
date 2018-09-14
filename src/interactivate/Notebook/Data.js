@@ -57,6 +57,11 @@ export const insert = (
   return { ...state, cells }
 }
 
+export const removeCells = (ids /*:ID[]*/, state /*:Model*/) /*:Model*/ => {
+  const cells = SelectionMap.remove(ids, state.cells)
+  return { ...state, cells }
+}
+
 export const replaceCell = (
   id /*:ID*/,
   cell /*:Cell.Model*/,

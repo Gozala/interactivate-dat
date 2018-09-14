@@ -1,9 +1,14 @@
 // @flow strict
 
 /*::
+export type Direction =
+  | -1
+  | 1
+
 export type Message =
   | { tag:"change", value:string }
-  | { tag:"leave", value:-1|1 }
+  | { tag:"leave", value:Direction }
+  | { tag:"remove", value:Direction }
   | { tag:"split" }
   | { tag:"focus" }
   | { tag:"output", value:mixed }

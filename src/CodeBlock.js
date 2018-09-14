@@ -124,7 +124,12 @@ export default class CodeBlock extends BaseElement {
       Down: () => this.onNextLine(),
       Left: () => this.onPreviousChar(),
       Right: () => this.onNextChar(),
-      Enter: () => this.onSplitLine()
+      Enter: () => this.onSplitLine(),
+      Backspace: () => this.onDeleteBefore(),
+      Delete: () => this.onDeleteAfter(),
+      "Alt-Backspace": () => this.onDeleteGroupBefore(),
+      "Alt-Delete": () => this.onDeleteGroupAfter(),
+      "Ctrl-Alt-Backspace": () => this.onDeleteGroupAfter()
     }
 
     this.root = this.attachShadow({ mode: "open", delegatesFocus: true })
@@ -184,6 +189,35 @@ export default class CodeBlock extends BaseElement {
         this.send("split")
         return Abort
       }
+    }
+    return this.Pass
+  }
+  isEmpty() {
+    const doc = this.editor.getDoc()
+    const count = doc.lineCount()
+    return count === 1 && doc.getLine(0) === ""
+  }
+  onDeleteBefore() {
+    if (this.isEmpty()) {
+      this.send("delete", -1)
+    }
+    return this.Pass
+  }
+  onDeleteAfter() {
+    if (this.isEmpty()) {
+      this.send("delete", 1)
+    }
+    return this.Pass
+  }
+  onDeleteGroupBefore() {
+    if (this.isEmpty()) {
+      this.send("delete", -1)
+    }
+    return this.Pass
+  }
+  onDeleteGroupAfter() {
+    if (this.isEmpty()) {
+      this.send("delete", 1)
     }
     return this.Pass
   }

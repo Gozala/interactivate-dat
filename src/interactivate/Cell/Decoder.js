@@ -6,6 +6,8 @@ import type { EventDecoder } from "../../elm/virtual-dom.js"
 import * as Inbox from "./Inbox.js"
 import * as Decoder from "../../Decoder.flow/Decoder.js"
 
+const Direction = Decoder.or(Decoder.match(-1), Decoder.match(1))
+
 export const change = Decoder.form({
   message: Decoder.form({
     tag: Decoder.ok("change"),
@@ -16,15 +18,18 @@ export const change = Decoder.form({
 export const escape = Decoder.form({
   message: Decoder.form({
     tag: Decoder.ok("leave"),
-    value: Decoder.at(
-      ["detail", "dir"],
-      Decoder.or(Decoder.match(-1), Decoder.match(1))
-    )
+    value: Decoder.at(["detail", "dir"], Direction)
   })
 })
 
 export const focus = Decoder.ok({ message: { tag: "focus" } })
 export const split = Decoder.ok({ message: { tag: "split" } })
+export const remove = Decoder.form({
+  message: Decoder.form({
+    tag: Decoder.ok("remove"),
+    value: Decoder.field("detail", Direction)
+  })
+})
 // decoder((event /*:Event*/) => {
 //   const detail = readProperty(String, "detail", event)
 //   const message = Inbox.change(detail)
