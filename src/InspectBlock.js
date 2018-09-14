@@ -34,6 +34,10 @@ export default class InpectBlock extends HTMLElement {
   async connectedCallback() {
     const style = this.ownerDocument.createElement("style")
     style.textContent = `
+    :host {
+      overflow-x: auto;
+    }
+
     .observablehq--expanded,
 .observablehq--collapsed,
 .observablehq--function,
