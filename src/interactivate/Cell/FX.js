@@ -124,8 +124,5 @@ export const setSelection = future(async (id, dir) => {
   }
 })
 
-const analyzer = new URL(
-  "./src/interactivate/Worker/analyzer.js",
-  location.href
-)
+const analyzer = new URL("/src/interactivate/Worker/analyzer.js", location.href)
 const analyze = source => request(analyzer, source)

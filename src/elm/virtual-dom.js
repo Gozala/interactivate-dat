@@ -1540,7 +1540,7 @@ export function virtualize(root) {
   var kids = root.childNodes
 
   for (var i = kids.length; i--; ) {
-    kidList.push(virtualize(kids[i]))
+    kidList.unshift(virtualize(kids[i]))
   }
   return node(tag, factList, kidList)
 }

@@ -12,6 +12,7 @@
   --syntax_known_variable: #005f87;
   --syntax_normal: #1b1e23;
   --syntax_string: #008ec4;
+  --back: #2c3e50;
 
   --hack-opacity: 0.5;
 
@@ -44,8 +45,17 @@
   --syntax_string: #9fdff7;
 }
 
+html {
+  width: 100%;
+  height: 100%;
+}
 
 body {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: var(--back);
+
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
   color: #1b1e23;
@@ -53,7 +63,7 @@ body {
     Times New Roman, Droid Serif, Times, Source Serif Pro, serif,
     Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
   margin: 0;
-  padding: 0 10px;
+  padding: 0;
 }
 
 body.dark,
@@ -524,4 +534,50 @@ code-block:focus-within {
 .dark .hover-shadow-4:hover {
   box-shadow: 0 0 3px 1px hsla(0, 0%, 100%, 0.7);
   transform: translateY(-1px);
+}
+
+.load {
+  transition: tarnsform;
+}
+
+.load.connecting {
+  animation: connect 2s ease forwards;
+}
+
+.load.loading {
+  animation: download 2s ease forwards;
+}
+
+.load.ready {
+  animation: complete 0.5s ease forwards;
+}
+
+@keyframes connect {
+  0% {
+    transform: scale(0, 0.002);
+  }
+  100% {
+    transform: scale(0.2, 0.002);
+  }
+}
+
+@keyframes download {
+  0% {
+    transform: scale(0.2, 0.002);
+  }
+  100% {
+    transform: scale(0.7, 0.002);
+  }
+}
+
+@keyframes complete {
+  0% {
+    transform: scale(0.7, 0.002);
+  }
+  50% {
+    transform: scale(1, 0.002);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
 }

@@ -24,15 +24,15 @@ interface Create {
   prompt?:boolean; 
 }
 
-interface Fork extends Create {}
+export interface Fork extends Create {}
 
-interface Select {
+export interface Select {
   title: string;
   buttonLabel: string;
   filters?: Filter;
 }
 
-type Filter = {
+export type Filter = {
   isOwner?: boolean;
   type?:string[];
 }
@@ -85,6 +85,9 @@ export interface Archive extends NetworkActivityStream {
 
   rmdir(Path, options?: { recursive: boolean }): Promise<void>;
 
+  rename(Path, Path, options:?Timeout):Promise<void>; 
+  copy(Path, Path, options:?Timeout):Promise<void>;
+
   history(?History):Promise<Revision[]>;
   
   checkout(version:number):Promise<void>;
@@ -120,12 +123,12 @@ export interface ArchiveConfig {
   timeout:number;
 }
 
-interface Timeout {
+export interface Timeout {
   timeout: number;
 }
 export type Path = string
 
-interface Stat {
+export interface Stat {
   isDirectory(): boolean;
   isFile(): boolean;
 

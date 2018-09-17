@@ -7,7 +7,7 @@ import * as SelectionMap from "../../Data/SelectionMap.js"
 export type ID = SelectionMap.ID
 export type Model = {
   url:string;
-  status:"loading"|"ready";
+  status:"loading"|"ready"|"error";
   cells:SelectionMap.SelectionMap<Cell.Model>;
 }
 
@@ -19,15 +19,17 @@ const notebook = (url, status, cells = SelectionMap.empty()) => ({
   cells
 })
 
-export const init = () /*:Model*/ =>
-  append(
-    [
-      {
-        input: "// Wellcome to your first notebook"
-      }
-    ],
-    notebook("temp://", "ready")
-  )
+export const init = (url /*:string*/, input /*:string*/) /*:Model*/ => {
+  const cell = Cell.init(input)
+  const cells = SelectionMap.select(cell, SelectionMap.fromValues([cell]))
+  return notebook(url, "ready", cells)
+}
+
+export const load = (location /*:string*/) /*:Model*/ =>
+  notebook(`dat://${location}`, "loading")
+
+export const failLoad = (state /*:Model*/) =>
+  state.status === "loading" ? { ...state, status: "error" } : state
 
 export const append = (
   entries /*:{input:string}[]*/,
@@ -87,12 +89,6 @@ export const joinCell = (id /*:ID*/, dir /*:-1|1*/, state /*:Model*/) => {
 
 export const cellByID = (id /*:ID*/, state /*:Model*/) /*:?Cell.Model*/ =>
   SelectionMap.valueByKey(id, state.cells)
-
-export const load = (location /*:string*/) /*:Model*/ => ({
-  url: `dat://${location}`,
-  status: "loading",
-  cells: SelectionMap.empty()
-})
 
 export const cells = (
   state /*:Model*/

@@ -31,18 +31,38 @@ import * as Data from "./Notebook/Data.js"
 import * as Inbox from "./Notebook/Inbox.js"
 import { keyedNode, node } from "../elm/virtual-dom.js"
 import * as Cell from "./Cell.js"
+import * as Dat from "../io/dat.js"
 
 /*::
 export type Model = Data.Model
 export type Message = Inbox.Message
 */
 
-export const init = () => [Data.init(), nofx]
-export const load = (path /*:string*/) => [Data.load(path), nofx]
+export const init = () => {
+  const state = Data.init("temp://", `print: "Hello"`)
+  const selection = Data.selection(state)
+  if (selection) {
+    const [id, cell] = selection
+    const [cell2, fx] = Cell.setSelection(-1, id, cell)
+    const state2 = Data.replaceCell(id, cell2, state)
+    return [state2, fx.map(Inbox.cell(id))]
+  } else {
+    return [state, nofx]
+  }
+}
+
+export const load = (path /*:string*/) => [
+  Data.load(path),
+  fx(Dat.readFile(new URL(`dat://${path}`)), Inbox.loadOk, Inbox.loadError)
+]
+
 export const update = (message /*:Message*/, state /*:Model*/) => {
   switch (message.tag) {
     case "LoadNotebook": {
-      return [state, nofx]
+      return [Data.init(state.url, message.value), nofx]
+    }
+    case "LoadFailed": {
+      return [Data.failLoad(state), nofx]
     }
     case "Cell": {
       const [id, payload] = message.value
@@ -123,7 +143,13 @@ const setSelection = (dir, state) => {
 
 export const view = (state /*:Model*/) =>
   article(
-    [className("w-100 mw8 ph3 center mt4")],
+    [
+      className(
+        `w-100 h-100 ph3 overflow-container center bg-white load ${
+          state.status
+        }`
+      )
+    ],
     [viewHeader(state), viewDocument(state)]
   )
 
@@ -135,32 +161,32 @@ const viewHeader = state =>
       )
     ],
     [
-      picture(
-        [className("inline-flex")],
-        [
-          source([srcset("dat://gozala.hashbase.io/profile.jpeg")]),
-          source([srcset("./icons/fontawesome/svgs/solid/user.svg")]),
-          img([className("br-100 h3 w3 mw3 dib")])
-        ]
-      ),
-      div(
-        [className("w-100 pl2 pl3-ns f6")],
-        [
-          a(
-            [className("flex items-center no-underline black hover-blue")],
-            [text("Irakli Gozalishvili")]
-          ),
-          div(
-            [className("mt1 lh-copy black-50")],
-            [
-              text(
-                "Curios tinkerer at Mozilla that fancies functional paradigm. Environmentalist; Husband; Father; LISPer with recently developed interest in static type systems."
-              )
-            ]
-          )
-        ]
-      ),
-      div([className("dtc v-mid")])
+      // picture(
+      //   [className("inline-flex")],
+      //   [
+      //     source([srcset("dat://gozala.hashbase.io/profile.jpeg")]),
+      //     source([srcset("./icons/fontawesome/svgs/solid/user.svg")]),
+      //     img([className("br-100 h3 w3 mw3 dib")])
+      //   ]
+      // ),
+      // div(
+      //   [className("w-100 pl2 pl3-ns f6")],
+      //   [
+      //     a(
+      //       [className("flex items-center no-underline black hover-blue")],
+      //       [text("Irakli Gozalishvili")]
+      //     ),
+      //     div(
+      //       [className("mt1 lh-copy black-50")],
+      //       [
+      //         text(
+      //           "Curios tinkerer at Mozilla that fancies functional paradigm. Environmentalist; Husband; Father; LISPer with recently developed interest in static type systems."
+      //         )
+      //       ]
+      //     )
+      //   ]
+      // ),
+      // div([className("dtc v-mid")])
     ]
   )
 

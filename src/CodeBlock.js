@@ -30,8 +30,8 @@ const fetchStyle = async path => {
 
 const style = async () => {
   const [base, theme] = await Promise.all([
-    fetchStyle("./src/codemirror/lib/codemirror.css"),
-    fetchStyle("./theme.css")
+    fetchStyle("/src/codemirror/lib/codemirror.css"),
+    fetchStyle("/theme.css")
   ])
   return `
   :host {
@@ -136,7 +136,8 @@ export default class CodeBlock extends BaseElement {
 
     // this.addEventListener("focus", this)
     // this.addEventListener("blur", this)
-
+    this.addEventListener("focus", this)
+    this.addEventListener("click", this)
     this.options = new Options()
     this.onChanges = idle.debounce(() => void this.receive("changes"))
     this.onCursorActivity = idle.debounce(
@@ -156,6 +157,7 @@ export default class CodeBlock extends BaseElement {
 
     if (this.ownerDocument.activeElement === this) {
       this.editor.focus()
+      this.editor.refresh()
     }
   }
   setSelection(dir /*:-1|1*/) {
@@ -226,8 +228,12 @@ export default class CodeBlock extends BaseElement {
   */
   handleEvent(event /*:FocusEvent*/) {
     switch (event.type) {
+      case "click":
       case "focus": {
-        return this.editor.focus()
+        if (this.editor) {
+          this.editor.refresh()
+          return this.focus()
+        }
       }
       case "blur": {
       }

@@ -63,7 +63,7 @@ export const view = (state /*:Model*/) =>
   doc(
     "",
     body(
-      [className("relative sans-serif")],
+      [className("sans-serif")],
       [Notebook.view(state.notebook).map(Inbox.notebook)]
     )
   )

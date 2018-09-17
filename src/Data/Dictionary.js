@@ -29,7 +29,7 @@ export const from = /*::<a>*/ (
   entries /*:Iterable<[string, a]> | Iterable<[number, a]>*/
 ) /*:Dictionary<a>*/ => {
   let data
-  for (const [key, value] in entries) {
+  for (const [key, value] of entries) {
     if (value != null) {
       const dict = data || (data = new Dict())
       dict[key] = value
