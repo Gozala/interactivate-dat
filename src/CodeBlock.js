@@ -117,6 +117,7 @@ export default class CodeBlock extends BaseElement {
   onCursorActivity:() => void
   root:ShadowRoot
   Pass:mixed
+  handleEvent:Event => mixed
   */
   init() {
     this.navigationKeys = this.navigationKeys || {
@@ -134,8 +135,6 @@ export default class CodeBlock extends BaseElement {
 
     this.root = this.attachShadow({ mode: "open", delegatesFocus: true })
 
-    // this.addEventListener("focus", this)
-    // this.addEventListener("blur", this)
     this.addEventListener("focus", this)
     this.addEventListener("click", this)
     this.options = new Options()
@@ -223,10 +222,8 @@ export default class CodeBlock extends BaseElement {
     }
     return this.Pass
   }
-  /*::
-  handleEvent:FocusEvent => mixed
-  */
-  handleEvent(event /*:FocusEvent*/) {
+
+  handleEvent(event /*:FocusEvent|MouseEvent*/) {
     switch (event.type) {
       case "click":
       case "focus": {

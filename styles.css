@@ -536,20 +536,34 @@ code-block:focus-within {
   transform: translateY(-1px);
 }
 
-.load {
-  transition: tarnsform;
+.load .progress {
+  position: absolute;
+  pointer-events: none;
+  background: white;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 
-.load.connecting {
+.load.connecting .progress {
   animation: connect 2s ease forwards;
 }
 
-.load.loading {
+.load.loading .progress {
   animation: download 2s ease forwards;
 }
 
-.load.ready {
+.load.ready .progress {
   animation: complete 0.5s ease forwards;
+}
+
+.load article {
+  opacity: 0;
+}
+
+.load.ready article {
+  animation: fade-in 0.5s ease forwards;
 }
 
 @keyframes connect {
@@ -573,11 +587,26 @@ code-block:focus-within {
 @keyframes complete {
   0% {
     transform: scale(0.7, 0.002);
+    opacity: 1;
   }
   50% {
     transform: scale(1, 0.002);
+    opacity: 1;
   }
   100% {
     transform: scale(1, 1);
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }

@@ -14,7 +14,9 @@ import {
   div,
   h1,
   h2,
-  select
+  select,
+  progress,
+  form
 } from "../elm/element.js"
 import {
   className,
@@ -142,15 +144,15 @@ const setSelection = (dir, state) => {
 }
 
 export const view = (state /*:Model*/) =>
-  article(
+  form(
+    [className(`w-100 h-100 load ${state.status}`)],
     [
-      className(
-        `w-100 h-100 ph3 overflow-container center bg-white load ${
-          state.status
-        }`
-      )
-    ],
-    [viewHeader(state), viewDocument(state)]
+      article(
+        [className(`w-100 h-100 ph3 overflow-container center bg-white`)],
+        [viewHeader(state), viewDocument(state)]
+      ),
+      div([className(`progress`)])
+    ]
   )
 
 const viewHeader = state =>
