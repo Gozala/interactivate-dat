@@ -5,24 +5,36 @@ import { send, request } from "../../io/worker.js"
 
 class Sandbox {
   /*::
+  lastID:number
   resolve:mixed => void
   reject:mixed => void
   script:HTMLScriptElement
   handleEvent:Event => mixed
   */
+  constructor() {
+    this.lastID = 0
+  }
   evaluate(id, code) {
     const { document } = window
     const script = document.createElement("script")
     script.id = id
     script.defer = "defer"
     script.type = "module"
-    script.addEventListener("load", this)
     script.addEventListener("error", this)
+    script.addEventListener("evaluated", this)
     window.addEventListener("error", this)
-    const blob = new Blob([code], {
-      type: "text/javascript"
-    })
-    script.src = URL.createObjectURL(blob)
+
+    window[id] = (value, bindings) =>
+      script.dispatchEvent(
+        new CustomEvent("evaluated", {
+          detail: { value, bindings }
+        })
+      )
+    // const blob = new Blob([code], {
+    //   type: "text/javascript"
+    // })
+    // script.src = URL.createObjectURL(blob)
+    script.textContent = code
     this.script = script
 
     document.head.appendChild(script)
@@ -44,12 +56,13 @@ class Sandbox {
 
   finally() {
     const { script } = this
-    script.removeEventListener("load", this)
+    script.removeEventListener("evaluated", this)
     script.removeEventListener("error", this)
     window.removeEventListener("error", this)
     script.remove()
-    URL.revokeObjectURL(script.src)
-    script.src = ""
+    // URL.revokeObjectURL(script.src)
+    // script.src = ""
+    delete window[script.id]
     delete this.script
     delete this.resolve
     delete this.reject
@@ -58,19 +71,21 @@ class Sandbox {
     const { script } = this
     switch (event.target) {
       case window: {
-        if (event.type === "error" && event.filename === script.src) {
-          return this.throw((window[script.id] = event.error))
+        if (event.type === "error" /*&& event.filename === script.src*/) {
+          return this.throw(event.error)
         }
+        break
       }
       case script: {
         switch (event.type) {
-          case "load": {
-            return this.return(window[script.id])
-          }
           case "error": {
-            return this.throw((window[script.id] = event))
+            return this.throw(event.error)
+          }
+          case "evaluated": {
+            return this.return(event.detail)
           }
         }
+        break
       }
     }
   }
@@ -79,7 +94,7 @@ class Sandbox {
 const sandbox = new Sandbox()
 
 const generateAccessor = name =>
-  `${name}:{configurable:true,enumerable:true,get(){return ${name}},set(){${name}=arguments[0]}}`
+  `${name}:{configurable:true,enumerable:true,get(){return ${name}},set(ø){${name}=ø}}`
 
 const generateBindings = ({ bindings, globals, labels }) => {
   const accessors = []
@@ -90,14 +105,18 @@ const generateBindings = ({ bindings, globals, labels }) => {
     }
   }
 
-  return `;Object.defineProperties(window, {${accessors.join(",")}});`
+  return `{${accessors.join(",")}}`
 }
-export const evaluate = future(async (id /*:string*/, code /*:string*/) => {
-  const index = Math.max(code.lastIndexOf("\n"), 0)
-  const expression = code.slice(code.indexOf(":", index) + 1)
-  const source = `${code.slice(0, index)}\nwindow["${id}"]=${expression}`
 
-  const result /*:any*/ = await analyze(source)
+let lastEvalindex = 0
+
+export const evaluate = future(async (id /*:string*/, code /*:string*/) => {
+  const evalID = `ø${++lastEvalindex}${Date.now().toString(32)}`
+  const index = Math.max(code.lastIndexOf("\n"), 0)
+  const expression = code.slice(code.indexOf(":", index) + 1).trim()
+  const source = `${code.slice(0, index)}\n`
+
+  const result /*:any*/ = await analyze(code)
   if (result.error) {
     switch (result.error.name) {
       case "SyntaxError": {
@@ -108,8 +127,12 @@ export const evaluate = future(async (id /*:string*/, code /*:string*/) => {
       }
     }
   } else {
-    const bindings = generateBindings(result.ok)
-    return await sandbox.evaluate(id, `${source};${bindings}`)
+    const sourceURL = `\n//# sourceURL=./eval.js`
+    const refs = generateBindings(result.ok)
+    const code = `${source};${evalID}(${expression},${refs})${sourceURL}`
+    const { bindings, value } = await sandbox.evaluate(evalID, code)
+    Object.defineProperties(window, bindings)
+    return value
   }
 })
 
