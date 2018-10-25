@@ -30,3 +30,5 @@ export const updateOutput = (
   ...state,
   output
 })
+
+export const input = ({ input } /*:Model*/) /*:string*/ => input

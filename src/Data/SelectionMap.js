@@ -259,7 +259,7 @@ export const count = /*::<a>*/ (data /*:SelectionMap<a>*/) /*: number*/ =>
 export const keys = /*::<a>*/ (data /*:SelectionMap<a>*/) /*: Iterable<ID>*/ =>
   data.index
 
-export const values = function* entries /*::<a>*/(
+export const values = function* values /*::<a>*/(
   data /*:SelectionMap<a>*/
 ) /*: Iterable<a>*/ {
   for (const [, value] of entries(data)) {

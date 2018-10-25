@@ -1,11 +1,11 @@
 // @flow strict
 
-import { attribute, property, style } from "./virtual-dom.js"
+import { attribute, property, style, on } from "./virtual-dom.js"
 /*::
 import type {Attribute} from "./virtual-dom.js"
 */
 
-export { style, attribute, property }
+export { style, attribute, property, on }
 // // TODO: defaultValue, defaultChecked, innerHTML, suppressContentEditableWarning, suppressHydrationWarning, style
 
 export const acceptCharset = /*::<a>*/ (value /*:string*/) /*:Attribute<a>*/ =>

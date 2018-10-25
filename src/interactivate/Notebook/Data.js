@@ -6,7 +6,7 @@ import * as SelectionMap from "../../Data/SelectionMap.js"
 /*::
 export type ID = SelectionMap.ID
 export type Model = {
-  url:string;
+  url:?URL;
   status:"loading"|"ready"|"error";
   cells:SelectionMap.SelectionMap<Cell.Model>;
 }
@@ -19,14 +19,13 @@ const notebook = (url, status, cells = SelectionMap.empty()) => ({
   cells
 })
 
-export const init = (url /*:string*/, input /*:string*/) /*:Model*/ => {
+export const init = (url /*:?URL*/, input /*:string*/) /*:Model*/ => {
   const cell = Cell.init(input)
   const cells = SelectionMap.select(cell, SelectionMap.fromValues([cell]))
   return notebook(url, "ready", cells)
 }
 
-export const load = (location /*:string*/) /*:Model*/ =>
-  notebook(`dat://${location}`, "loading")
+export const load = (url /*:URL*/) /*:Model*/ => notebook(url, "loading")
 
 export const failLoad = (state /*:Model*/) =>
   state.status === "loading" ? { ...state, status: "error" } : state
@@ -124,3 +123,11 @@ export const lastCell = (state /*:Model*/) /*:?Cell.Model*/ =>
 
 export const firstCell = (state /*:Model*/) /*:?Cell.Model*/ =>
   SelectionMap.valueByIndex(0, state.cells)
+
+export const textInput = (state /*:Model*/) /*:string*/ => {
+  let text = ""
+  for (const value of SelectionMap.values(state.cells)) {
+    text = `${text}${Cell.input(value)}`
+  }
+  return text
+}

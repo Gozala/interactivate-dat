@@ -11,19 +11,15 @@ import * as Data from "./Cell/Data.js"
 import * as Inbox from "./Cell/Inbox.js"
 import * as Outbox from "./Cell/Outbox.js"
 import * as Decoder from "./Cell/Decoder.js"
-import * as FX from "./Cell/FX.js"
+import * as Effect from "./Cell/Effect.js"
 
 /*::
-import type { Effect } from "../elm/fx.js"
 import type { Node } from "../elm/virtual-dom.js"
 export type Model = Data.Model
 export type Message = Inbox.Message
 */
 
-export const update = (
-  message /*:Message*/,
-  state /*:Model*/
-) /*:[Model, Effect<Message>]*/ => {
+export const update = (message /*:Message*/, state /*:Model*/) => {
   switch (message.tag) {
     case "change": {
       const { value } = message
@@ -57,7 +53,7 @@ export const update = (
     case "split": {
       return [
         state,
-        fx(FX.evaluate("out", state.input), Inbox.output, Inbox.output)
+        fx(Effect.evaluate("out", state.input), Inbox.output, Inbox.output)
       ]
     }
     case "focus": {
@@ -82,8 +78,8 @@ export const setSelection = (
   direction /*:-1|1*/,
   id /*:string*/,
   state /*:Model*/
-) /*:[Model, Effect<Message>]*/ => {
-  return [state, fx(FX.setSelection(`cell-${id}`, direction))]
+) => {
+  return [state, fx(Effect.setSelection(`cell-${id}`, direction))]
 }
 
 export const tokenize = (input /*:string*/) /*:string[]*/ => {

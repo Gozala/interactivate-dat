@@ -15,6 +15,7 @@
   --back: #2c3e50;
 
   --hack-opacity: 0.5;
+  --primary: rgb(83, 64, 242);
 
   --hack: {
     outline: 10px solid red;
@@ -535,6 +536,125 @@ code-block:focus-within {
   box-shadow: 0 0 3px 1px hsla(0, 0%, 100%, 0.7);
   transform: translateY(-1px);
 }
+
+/* Publish Button */
+.publish:after {
+  border-radius: 50%;
+  width: 10em;
+  height: 10em;
+  border: 3px solid;
+}
+
+.publish.publishing:after {
+  font-size: 10px;
+  text-indent: -9999em;
+  border-top: 3px solid rgba(255, 255, 255, 0.2);
+  border-left: 3px solid #ffffff;
+  transform: translateZ(0);
+  animation: spin 1.1s infinite linear;
+}
+
+.publish:after {
+  content: " ";
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.publish {
+  outline: none;
+  border: none;
+  background: #ff4700;
+  box-shadow: 0 5px 10px -5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  height: 44px;
+  width: 150px;
+  padding: 10px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  font-size: 20px;
+  transition: width 0.25s ease 0.25s, border-radius 0.25s ease 0.25s,
+    color 0.25s ease 0.5s, background 0.25s ease;
+}
+
+.publish:after {
+  color: #ffffff;
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  height: 24px;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+}
+
+.publish.publishing {
+  width: 44px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0);
+  border-radius: 44px;
+  transition: color 0.25s ease, width 0.25s ease 0.25s,
+    border-radius 0.25s ease 0.25s;
+  -webkit-animation: bounce 3s ease infinite;
+  animation: bounce 3s ease infinite;
+}
+.publish.publishing:after {
+  opacity: 1;
+  transition: opacity 0.25s ease 0.5s;
+}
+
+.publish.published {
+  background: #35b197;
+  color: rgba(255, 255, 255, 0);
+  width: 44px;
+  border-radius: 44px;
+  transition: background 0.25s ease;
+
+  animation: hide 0.8s ease 0.5s 1 forwards;
+}
+
+.publish.published {
+  mask: url(/icons/fontawesome/svgs/solid/check-circle.svg) no-repeat 50% 50%;
+  -webkit-mask: url(/icons/fontawesome/svgs/solid/check-circle.svg) no-repeat
+    50% 50%;
+}
+
+@keyframes bounce {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes hide {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0);
+  }
+}
+
+/* Initial page loader */
 
 .load .progress {
   position: absolute;

@@ -1,24 +1,32 @@
 // @noflow
 
-const __2_TEXT = "VirtualDOM.Text"
-const __2_NODE = "VirtualDOM.Node"
-const __2_KEYED_NODE = "VirtualDOM.Keyed.Node"
-const __2_CUSTOM = "VirtualDOM.Custom"
-const __2_TAGGER = "VirtualDOM.Tagger"
-const __2_THUNK = "VirtualDOM.Thunk"
-const __3_REDRAW = "VirtualDOM.OP.Redraw"
-const __3_THUNK = "VirtualDOM.OP.Thunk"
-const __3_TAGGER = "VirtualDOM.OP.Tagger"
-const __3_TEXT = "VirtualDOM.OP.Text"
-const __3_FACTS = "VirtualDOM.OP.Facts"
-const __3_CUSTOM = "VirtualDOM.OP.Custom"
-const __3_REMOVE_LAST = "VirtualDOM.OP.RemoveLast"
-const __3_APPEND = "VirtualDOM.OP.Append"
-const __3_REORDER = "VirtualDOM.OP.Reorder"
-const __3_REMOVE = "VirtualDOM.OP.Remove"
-const __5_REMOVE = "VirtualDOM.OP.Remove2"
-const __5_INSERT = "VirtualDOM.OP.Insert"
-const __5_MOVE = "VirtualDOM.OP.Move"
+const TEXT = "VirtualDOM.Text"
+const NODE = "VirtualDOM.Node"
+const KEYED_NODE = "VirtualDOM.Keyed.Node"
+const CUSTOM_NODE = "VirtualDOM.Custom"
+const CUSTOM_ELEMENT = "VirtualDOM.CustomElement"
+const TAGGED_NODE = "VirtualDOM.Tagger"
+const THUNK_NODE = "VirtualDOM.Thunk"
+
+const OP_REDRAW = "VirtualDOM.OP.Redraw"
+const OP_THUNK = "VirtualDOM.OP.Thunk"
+const OP_TAGGER = "VirtualDOM.OP.Tagger"
+const OP_TEXT = "VirtualDOM.OP.Text"
+const OP_FACTS = "VirtualDOM.OP.Facts"
+const OP_CUSTOM = "VirtualDOM.OP.Custom"
+const OP_REMOVE_LAST = "VirtualDOM.OP.RemoveLast"
+const OP_APPEND = "VirtualDOM.OP.Append"
+const OP_REORDER = "VirtualDOM.OP.Reorder"
+const OP_REMOVE = "VirtualDOM.OP.Remove"
+const OP_DELETE = "VirtualDOM.OP.Delete"
+const OP_INSERT = "VirtualDOM.OP.Insert"
+const OP_MOVE = "VirtualDOM.OP.Move"
+
+const SETTING_EVENT = "VirtualDOM.Setting.Event"
+const SETTING_STYLE = "VirtualDOM.Setting.Style"
+const SETTING_PROPERTY = "VirtualDOM.Setting.Property"
+const SETTING_ATTRIBUTE = "VirtualDOM.Setting.Attribute"
+const SETTING_ATTRIBUTE_NS = "VirtualDOM.Setting.AttributeNS"
 
 // HELPERS
 
@@ -27,14 +35,6 @@ function appendChild(parent, child) {
 }
 
 var init = function(virtualNode, flagDecoder, debugMetadata, args) {
-  // NOTE: this function needs __Platform_export available to work
-
-  /**__PROD/
-	var node = args['node'];
-	//*/
-  /**__DEBUG/
-	var node = args && args['node'] ? args['node'] : __Debug_crash(0);
-  //*/
   const { node } = args
 
   node.parentNode.replaceChild(
@@ -49,8 +49,8 @@ var init = function(virtualNode, flagDecoder, debugMetadata, args) {
 
 class Text {
   constructor(content) {
-    this.$ = __2_TEXT
-    this.__text = content
+    this.nodeType = TEXT
+    this.text = content
   }
   map(tagger) {
     return this
@@ -64,14 +64,31 @@ export const text = content => new Text(content)
 const noKids = Object.freeze([])
 const noFacts = Object.freeze([])
 
+class CustomElement {
+  constructor(localName, elementConstructor, options, settings) {
+    this.nodeType = CUSTOM_ELEMENT
+    this.localName = localName
+    this.elementConstructor = elementConstructor
+    this.options = options
+    this.settings = settings
+    this.children = noKids
+  }
+  map(tagger) {
+    return new TaggerNode(tagger, this)
+  }
+}
+
+export const customElement = (localName, constructor, settings) =>
+  new CustomElement(localName, constructor, undefined, organizeFacts(settings))
+
 class Node {
-  constructor(tag, facts, kids, namespace, descendantsCount) {
-    this.$ = __2_NODE
-    this.__tag = tag
-    this.__facts = facts
-    this.__kids = kids
+  constructor(localName, settings, children, namespace, descendantsCount) {
+    this.nodeType = NODE
+    this.localName = localName
+    this.settings = settings
+    this.children = children
     this.namespace = namespace
-    this.__descendantsCount = descendantsCount
+    this.descendantsCount = descendantsCount
   }
   map(tagger) {
     return new TaggerNode(tagger, this)
@@ -80,7 +97,7 @@ class Node {
 
 export const nodeNS = (
   namespace,
-  tag,
+  localName,
   factList = noFacts,
   kidList = noKids
 ) => {
@@ -90,13 +107,13 @@ export const nodeNS = (
     index++
   ) {
     var kid = kidList[index]
-    descendantsCount += kid.__descendantsCount || 0
+    descendantsCount += kid.descendantsCount || 0
     kids.push(kid)
   }
   descendantsCount += kids.length
 
   return new Node(
-    tag,
+    localName,
     organizeFacts(factList),
     kids,
     namespace,
@@ -109,33 +126,33 @@ export var node = nodeNS.bind(null, null)
 // KEYED NODE
 
 class KeyedNode {
-  constructor(tag, facts, kids, namespace, descendantsCount) {
-    this.$ = __2_KEYED_NODE
-    this.__tag = tag
-    this.__facts = facts
-    this.__kids = kids
+  constructor(localName, facts, kids, namespace, descendantsCount) {
+    this.nodeType = KEYED_NODE
+    this.localName = localName
+    this.settings = facts
+    this.children = kids
     this.namespace = namespace
-    this.__descendantsCount = descendantsCount
+    this.descendantsCount = descendantsCount
   }
   map(tagger) {
     return new TaggerNode(tagger, this)
   }
 }
 
-export const keyedNodeNS = (namespace, tag, factList, kidList) => {
+export const keyedNodeNS = (namespace, localName, factList, kidList) => {
   for (
     var kids = [], descendantsCount = 0, index = 0;
     kidList.length > index;
     index++
   ) {
     var kid = kidList[index]
-    descendantsCount += kid[1].__descendantsCount || 0
+    descendantsCount += kid[1].descendantsCount || 0
     kids.push(kid)
   }
   descendantsCount += kids.length
 
   return new KeyedNode(
-    tag,
+    localName,
     organizeFacts(factList),
     kids,
     namespace,
@@ -149,11 +166,11 @@ export var keyedNode = keyedNodeNS.bind(null, null)
 
 class CustomNode {
   constructor(facts, model, render, diff) {
-    this.$ = __2_CUSTOM
-    this.__facts = facts
-    this.__model = model
-    this.__render = render
-    this.__diff = diff
+    this.nodeType = CUSTOM_NODE
+    this.settings = facts
+    this.model = model
+    this.render = render
+    this.diff = diff
   }
   map(tagger) {
     return new TaggerNode(tagger, this)
@@ -179,10 +196,10 @@ export const doc = (title, body) => new Doc(title, body)
 
 class TaggerNode {
   constructor(tagger, node) {
-    this.$ = __2_TAGGER
-    this.__tagger = tagger
-    this.__node = node
-    this.__descendantsCount = 1 + (node.__descendantsCount || 0)
+    this.nodeType = TAGGED_NODE
+    this.tagger = tagger
+    this.node = node
+    this.descendantsCount = 1 + (node.descendantsCount || 0)
   }
   map(tagger) {
     return new TaggerNode(tagger, this)
@@ -195,10 +212,10 @@ export const map = (tagger, node) => new TaggerNode(tagger, node)
 
 class Thunk {
   constructor(refs, thunk) {
-    this.$ = __2_THUNK
-    this.__refs = refs
-    this.__thunk = thunk
-    this.__node = undefined
+    this.nodeType = THUNK_NODE
+    this.refs = refs
+    this.force = thunk
+    this.node = undefined
   }
   map(tagger) {
     return new TaggerNode(tagger, this)
@@ -259,7 +276,7 @@ export var lazy8 = function(func, a, b, c, d, e, f, g, h) {
 
 class VirtualDOMEvent {
   constructor(type, handler) {
-    this.$ = "a__1_EVENT"
+    this.nodeType = SETTING_EVENT
     this.type = type
     this.handler = handler
   }
@@ -277,7 +294,7 @@ export var on = function(key, handler) {
 
 class VirtualDOMStyle {
   constructor(key, value) {
-    this.$ = "a__1_STYLE"
+    this.nodeType = SETTING_STYLE
     this.key = key
     this.value = value
   }
@@ -292,7 +309,7 @@ export var style = function(key, value) {
 
 class VirtualDOMProperty {
   constructor(key, value) {
-    this.$ = "a__1_PROP"
+    this.nodeType = SETTING_PROPERTY
     this.key = key
     this.value = value
   }
@@ -307,7 +324,7 @@ export var property = function(key, value) {
 
 class VirtualDOMAttribute {
   constructor(key, value) {
-    this.$ = "a__1_ATTR"
+    this.nodeType = SETTING_ATTRIBUTE
     this.key = key
     this.value = value
   }
@@ -320,7 +337,7 @@ export const attribute = (key, value) => new VirtualDOMAttribute(key, value)
 
 class VirtualDOMAttributeNS {
   constructor(namespace, key, value) {
-    this.$ = "a__1_ATTR_NS"
+    this.nodeType = SETTING_ATTRIBUTE_NS
     this.key = key
     this.value = { namespace: namespace, value: value }
   }
@@ -334,8 +351,8 @@ export const attributeNS = (namespace, key, value) =>
 
 // XSS ATTACK VECTOR CHECKS
 
-export function noScript(tag) {
-  return tag == "script" ? "p" : tag
+export function noScript(localName) {
+  return localName == "script" ? "p" : localName
 }
 
 export function noOnOrFormAction(key) {
@@ -441,10 +458,10 @@ function organizeFacts(factList) {
   ) {
     var fact = factList[index]
 
-    var tag = fact.$
+    var nodeType = fact.nodeType
 
-    switch (tag) {
-      case "a__1_PROP": {
+    switch (nodeType) {
+      case SETTING_PROPERTY: {
         const { key, value } = fact
         if (key === "className") {
           addClass(facts, key, value)
@@ -453,21 +470,21 @@ function organizeFacts(factList) {
         }
         break
       }
-      case "a__1_STYLE": {
+      case SETTING_STYLE: {
         const { key, value } = fact
-        var subFacts = facts[tag] || (facts[tag] = {})
+        var subFacts = facts[nodeType] || (facts[nodeType] = {})
         subFacts[key] = value
         break
       }
-      case "a__1_EVENT": {
+      case SETTING_EVENT: {
         const { type, handler } = fact
-        var subFacts = facts[tag] || (facts[tag] = {})
+        var subFacts = facts[nodeType] || (facts[nodeType] = {})
         subFacts[type] = handler
         break
       }
-      case "a__1_ATTR": {
+      case SETTING_ATTRIBUTE: {
         const { key, value } = fact
-        var subFacts = facts[tag] || (facts[tag] = {})
+        var subFacts = facts[nodeType] || (facts[nodeType] = {})
         if (key === "class") {
           addClass(subFacts, key, value)
         } else {
@@ -475,9 +492,9 @@ function organizeFacts(factList) {
         }
         break
       }
-      case "a__1_ATTR_NS": {
+      case SETTING_ATTRIBUTE_NS: {
         const { key, value } = fact
-        var subFacts = facts[tag] || (facts[tag] = {})
+        var subFacts = facts[nodeType] || (facts[nodeType] = {})
         if (key === "class") {
           addClass(subFacts, key, value)
         } else {
@@ -499,61 +516,76 @@ function addClass(object, key, newClass) {
 // RENDER
 
 function render(doc, vNode, eventNode) {
-  var tag = vNode.$
+  var nodeType = vNode.nodeType
 
-  if (tag === __2_THUNK) {
-    return render(
-      doc,
-      vNode.__node || (vNode.__node = vNode.__thunk()),
-      eventNode
-    )
+  if (nodeType === THUNK_NODE) {
+    return render(doc, vNode.node || (vNode.node = vNode.force()), eventNode)
   }
 
-  if (tag === __2_TEXT) {
-    return doc.createTextNode(vNode.__text)
+  if (nodeType === TEXT) {
+    return doc.createTextNode(vNode.text)
   }
 
-  if (tag === __2_TAGGER) {
-    var subNode = vNode.__node
-    var tagger = vNode.__tagger
+  if (nodeType === TAGGED_NODE) {
+    var subNode = vNode.node
+    var tagger = vNode.tagger
 
-    while (subNode.$ === __2_TAGGER) {
+    while (subNode.nodeType === TAGGED_NODE) {
       typeof tagger !== "object"
-        ? (tagger = [tagger, subNode.__tagger])
-        : tagger.push(subNode.__tagger)
+        ? (tagger = [tagger, subNode.tagger])
+        : tagger.push(subNode.tagger)
 
-      subNode = subNode.__node
+      subNode = subNode.node
     }
 
-    var subEventRoot = { __tagger: tagger, __parent: eventNode }
+    var subEventRoot = { tagger: tagger, parent: eventNode }
     var domNode = render(doc, subNode, subEventRoot)
     domNode.elm_event_node_ref = subEventRoot
     return domNode
   }
 
-  if (tag === __2_CUSTOM) {
-    var domNode = vNode.__render(doc, vNode.__model)
-    applyFacts(domNode, eventNode, vNode.__facts)
+  if (nodeType === CUSTOM_NODE) {
+    var domNode = vNode.render(doc, vNode.model)
+    applyFacts(domNode, eventNode, vNode.settings)
     return domNode
   }
 
-  // at this point `tag` must be __2_NODE or __2_KEYED_NODE
+  if (nodeType === CUSTOM_ELEMENT) {
+    const { elementConstructor, localName, options } = vNode
+    const { customElements } = document.defaultView
+    const registration = customElements.get(localName)
+    if (registration) {
+      if (registration !== elementConstructor.registration) {
+        Object.setPrototypeOf(
+          registration.prototype,
+          elementConstructor.prototype
+        )
+        elementConstructor.registration = registration
+      }
+    } else {
+      const registration = class extends vNode.elementConstructor {}
+      elementConstructor.registration = registration
+      customElements.define(localName, registration, options)
+    }
+  }
+
+  // at this point `nodeType` must be NODE or KEYED_NODE
 
   var domNode = vNode.namespace
-    ? doc.createElementNS(vNode.namespace, vNode.__tag)
-    : doc.createElement(vNode.__tag)
+    ? doc.createElementNS(vNode.namespace, vNode.localName)
+    : doc.createElement(vNode.localName)
 
   const { onnavigate } = doc.defaultView
-  if (onnavigate && vNode.__tag == "a") {
+  if (onnavigate && vNode.localName == "a") {
     domNode.addEventListener("click", onnavigate)
   }
 
-  applyFacts(domNode, eventNode, vNode.__facts)
+  applyFacts(domNode, eventNode, vNode.settings)
 
-  for (var kids = vNode.__kids, i = 0; i < kids.length; i++) {
+  for (var kids = vNode.children, i = 0; i < kids.length; i++) {
     appendChild(
       domNode,
-      render(doc, tag === __2_NODE ? kids[i] : kids[i][1], eventNode)
+      render(doc, nodeType === NODE ? kids[i] : kids[i][1], eventNode)
     )
   }
 
@@ -567,26 +599,30 @@ function applyFacts(domNode, eventNode, facts) {
     var value = facts[key]
 
     switch (key) {
-      case "a__1_STYLE": {
+      case SETTING_STYLE: {
         applyStyles(domNode, value)
         break
       }
-      case "a__1_EVENT": {
+      case SETTING_EVENT: {
         applyEvents(domNode, eventNode, value)
         break
       }
-      case "a__1_ATTR": {
+      case SETTING_ATTRIBUTE: {
         applyAttrs(domNode, value)
         break
       }
-      case "a__1_ATTR_NS": {
+      case SETTING_ATTRIBUTE_NS: {
         applyAttrsNS(domNode, value)
         break
       }
       default: {
         switch (key) {
-          case "value":
+          case "value": {
+            if (domNode.value !== value) {
+              domNode.value = value
+            }
             break
+          }
           case "checked":
             break
           case domNode[key]:
@@ -653,7 +689,7 @@ function applyEvents(domNode, eventNode, events) {
 
     if (oldCallback) {
       var oldHandler = oldCallback.handler
-      if (oldHandler.$ === newHandler.$) {
+      if (oldHandler.type === newHandler.type) {
         oldCallback.handler = newHandler
         continue
       }
@@ -722,7 +758,7 @@ function makeCallback(eventNode, handler) {
 
     var tagger
     var i
-    while ((tagger = currentEventNode.__tagger)) {
+    while ((tagger = currentEventNode.tagger)) {
       if (typeof tagger == "function") {
         message = tagger(message)
       } else {
@@ -730,7 +766,7 @@ function makeCallback(eventNode, handler) {
           message = tagger[i](message)
         }
       }
-      currentEventNode = currentEventNode.__parent
+      currentEventNode = currentEventNode.parent
     }
 
     if (stopPropagation) {
@@ -762,13 +798,13 @@ export function diff(x, y) {
   return patches
 }
 
-function pushPatch(patches, type, index, data) {
+function pushPatch(patches, op, index, data) {
   var patch = {
-    $: type,
-    __index: index,
-    __data: data,
-    __domNode: undefined,
-    __eventNode: undefined
+    op: op,
+    index: index,
+    changes: data,
+    domNode: undefined,
+    eventNode: undefined
   }
   patches.push(patch)
   return patch
@@ -779,73 +815,73 @@ function diffHelp(x, y, patches, index) {
     return
   }
 
-  var xType = x.$
-  var yType = y.$
+  var xType = x.nodeType
+  var yType = y.nodeType
 
   // Bail if you run into different types of nodes. Implies that the
   // structure has changed significantly and it's not worth a diff.
   if (xType !== yType) {
-    if (xType === __2_NODE && yType === __2_KEYED_NODE) {
+    if (xType === NODE && yType === KEYED_NODE) {
       y = dekey(y)
-      yType = __2_NODE
+      yType = NODE
     } else {
-      pushPatch(patches, __3_REDRAW, index, y)
+      pushPatch(patches, OP_REDRAW, index, y)
       return
     }
   }
 
-  // Now we know that both nodes are the same $.
+  // Now we know that both nodes are the same type.
   switch (yType) {
-    case __2_THUNK:
-      var xRefs = x.__refs
-      var yRefs = y.__refs
+    case THUNK_NODE: {
+      var xRefs = x.refs
+      var yRefs = y.refs
       var i = xRefs.length
       var same = i === yRefs.length
       while (same && i--) {
         same = xRefs[i] === yRefs[i]
       }
       if (same) {
-        y.__node = x.__node
+        y.node = x.node
         return
       }
-      y.__node = y.__thunk()
+      y.node = y.force()
       var subPatches = []
-      diffHelp(x.__node, y.__node, subPatches, 0)
-      subPatches.length > 0 && pushPatch(patches, __3_THUNK, index, subPatches)
+      diffHelp(x.node, y.node, subPatches, 0)
+      subPatches.length > 0 && pushPatch(patches, OP_THUNK, index, subPatches)
       return
-
-    case __2_TAGGER:
+    }
+    case TAGGED_NODE: {
       // gather nested taggers
-      var xTaggers = x.__tagger
-      var yTaggers = y.__tagger
+      var xTaggers = x.tagger
+      var yTaggers = y.tagger
       var nesting = false
 
-      var xSubNode = x.__node
-      while (xSubNode.$ === __2_TAGGER) {
+      var xSubNode = x.node
+      while (xSubNode.nodeType === TAGGED_NODE) {
         nesting = true
 
         typeof xTaggers !== "object"
-          ? (xTaggers = [xTaggers, xSubNode.__tagger])
-          : xTaggers.push(xSubNode.__tagger)
+          ? (xTaggers = [xTaggers, xSubNode.tagger])
+          : xTaggers.push(xSubNode.tagger)
 
-        xSubNode = xSubNode.__node
+        xSubNode = xSubNode.node
       }
 
-      var ySubNode = y.__node
-      while (ySubNode.$ === __2_TAGGER) {
+      var ySubNode = y.node
+      while (ySubNode.nodeType === TAGGED_NODE) {
         nesting = true
 
         typeof yTaggers !== "object"
-          ? (yTaggers = [yTaggers, ySubNode.__tagger])
-          : yTaggers.push(ySubNode.__tagger)
+          ? (yTaggers = [yTaggers, ySubNode.tagger])
+          : yTaggers.push(ySubNode.tagger)
 
-        ySubNode = ySubNode.__node
+        ySubNode = ySubNode.node
       }
 
       // Just bail if different numbers of taggers. This implies the
       // structure of the virtual DOM has changed.
       if (nesting && xTaggers.length !== yTaggers.length) {
-        pushPatch(patches, __3_REDRAW, index, y)
+        pushPatch(patches, OP_REDRAW, index, y)
         return
       }
 
@@ -853,38 +889,48 @@ function diffHelp(x, y, patches, index) {
       if (
         nesting ? !pairwiseRefEqual(xTaggers, yTaggers) : xTaggers !== yTaggers
       ) {
-        pushPatch(patches, __3_TAGGER, index, yTaggers)
+        pushPatch(patches, OP_TAGGER, index, yTaggers)
       }
 
       // diff everything below the taggers
       diffHelp(xSubNode, ySubNode, patches, index + 1)
       return
-
-    case __2_TEXT:
-      if (x.__text !== y.__text) {
-        pushPatch(patches, __3_TEXT, index, y.__text)
+    }
+    case TEXT: {
+      if (x.text !== y.text) {
+        pushPatch(patches, OP_TEXT, index, y.text)
       }
       return
-
-    case __2_NODE:
+    }
+    case NODE: {
       diffNodes(x, y, patches, index, diffKids)
       return
-
-    case __2_KEYED_NODE:
+    }
+    case KEYED_NODE: {
       diffNodes(x, y, patches, index, diffKeyedKids)
       return
+    }
+    case CUSTOM_ELEMENT: {
+      if (x.elementConstructor !== y.elementConstructor) {
+        pushPatch(patches, OP_REDRAW, index, y)
+        return
+      } else {
+        diffNodes(x, y, patches, index, diffKids)
+        return
+      }
+    }
 
-    case __2_CUSTOM:
-      if (x.__render !== y.__render) {
-        pushPatch(patches, __3_REDRAW, index, y)
+    case CUSTOM_NODE:
+      if (x.render !== y.render) {
+        pushPatch(patches, OP_REDRAW, index, y)
         return
       }
 
-      var factsDiff = diffFacts(x.__facts, y.__facts)
-      factsDiff && pushPatch(patches, __3_FACTS, index, factsDiff)
+      var factsDiff = diffFacts(x.settings, y.settings)
+      factsDiff && pushPatch(patches, OP_FACTS, index, factsDiff)
 
-      var patch = y.__diff(x.__model, y.__model)
-      patch && pushPatch(patches, __3_CUSTOM, index, patch)
+      var patch = y.diff(x.model, y.model)
+      patch && pushPatch(patches, OP_CUSTOM, index, patch)
 
       return
   }
@@ -904,13 +950,13 @@ function pairwiseRefEqual(as, bs) {
 function diffNodes(x, y, patches, index, diffKids) {
   // Bail if obvious indicators have changed. Implies more serious
   // structural changes such that it's not worth it to diff.
-  if (x.__tag !== y.__tag || x.namespace !== y.namespace) {
-    pushPatch(patches, __3_REDRAW, index, y)
+  if (x.localName !== y.localName || x.namespace !== y.namespace) {
+    pushPatch(patches, OP_REDRAW, index, y)
     return
   }
 
-  var factsDiff = diffFacts(x.__facts, y.__facts)
-  factsDiff && pushPatch(patches, __3_FACTS, index, factsDiff)
+  var factsDiff = diffFacts(x.settings, y.settings)
+  factsDiff && pushPatch(patches, OP_FACTS, index, factsDiff)
 
   diffKids(x, y, patches, index)
 }
@@ -926,10 +972,10 @@ function diffFacts(x, y, category) {
   // look for changes and removals
   for (var xKey in x) {
     if (
-      xKey === "a__1_STYLE" ||
-      xKey === "a__1_EVENT" ||
-      xKey === "a__1_ATTR" ||
-      xKey === "a__1_ATTR_NS"
+      xKey === SETTING_STYLE ||
+      xKey === SETTING_EVENT ||
+      xKey === SETTING_ATTRIBUTE ||
+      xKey === SETTING_ATTRIBUTE_NS
     ) {
       var subDiff = diffFacts(x[xKey], y[xKey] || {}, xKey)
       if (subDiff) {
@@ -946,9 +992,9 @@ function diffFacts(x, y, category) {
         ? typeof x[xKey] === "string"
           ? ""
           : null
-        : category === "a__1_STYLE"
+        : category === SETTING_STYLE
           ? ""
-          : category === "a__1_EVENT" || category === "a__1_ATTR"
+          : category === SETTING_EVENT || category === SETTING_ATTRIBUTE
             ? undefined
             : { namespace: x[xKey].namespace, value: undefined }
 
@@ -961,7 +1007,7 @@ function diffFacts(x, y, category) {
     // reference equal, so don't worry about it
     if (
       (xValue === yValue && xKey !== "value" && xKey !== "checked") ||
-      (category === "a__1_EVENT" && xValue.equal(yValue))
+      (category === SETTING_EVENT && xValue.equal(yValue))
     ) {
       continue
     }
@@ -984,8 +1030,8 @@ function diffFacts(x, y, category) {
 // DIFF KIDS
 
 function diffKids(xParent, yParent, patches, index) {
-  var xKids = xParent.__kids
-  var yKids = yParent.__kids
+  var xKids = xParent.children
+  var yKids = yParent.children
 
   var xLen = xKids.length
   var yLen = yKids.length
@@ -993,14 +1039,14 @@ function diffKids(xParent, yParent, patches, index) {
   // FIGURE OUT IF THERE ARE INSERTS OR REMOVALS
 
   if (xLen > yLen) {
-    pushPatch(patches, __3_REMOVE_LAST, index, {
-      __length: yLen,
-      __diff: xLen - yLen
+    pushPatch(patches, OP_REMOVE_LAST, index, {
+      offset: yLen,
+      diff: xLen - yLen
     })
   } else if (xLen < yLen) {
-    pushPatch(patches, __3_APPEND, index, {
-      __length: xLen,
-      __kids: yKids
+    pushPatch(patches, OP_APPEND, index, {
+      offset: xLen,
+      children: yKids
     })
   }
 
@@ -1009,7 +1055,7 @@ function diffKids(xParent, yParent, patches, index) {
   for (var minLen = xLen < yLen ? xLen : yLen, i = 0; i < minLen; i++) {
     var xKid = xKids[i]
     diffHelp(xKid, yKids[i], patches, ++index)
-    index += xKid.__descendantsCount || 0
+    index += xKid.descendantsCount || 0
   }
 }
 
@@ -1022,8 +1068,8 @@ function diffKeyedKids(xParent, yParent, patches, rootIndex) {
   var inserts = [] // Array { index : Int, entry : Entry }
   // type Entry = { tag : String, vnode : VNode, index : Int, data : _ }
 
-  var xKids = xParent.__kids
-  var yKids = yParent.__kids
+  var xKids = xParent.children
+  var yKids = yParent.children
   var xLen = xKids.length
   var yLen = yKids.length
   var xIndex = 0
@@ -1043,7 +1089,7 @@ function diffKeyedKids(xParent, yParent, patches, rootIndex) {
     if (xKey === yKey) {
       index++
       diffHelp(xNode, yNode, localPatches, index)
-      index += xNode.__descendantsCount || 0
+      index += xNode.descendantsCount || 0
 
       xIndex++
       yIndex++
@@ -1072,11 +1118,11 @@ function diffKeyedKids(xParent, yParent, patches, rootIndex) {
       index++
       diffHelp(xNode, yNextNode, localPatches, index)
       insertNode(changes, localPatches, xKey, yNode, yIndex, inserts)
-      index += xNode.__descendantsCount || 0
+      index += xNode.descendantsCount || 0
 
       index++
       removeNode(changes, localPatches, xKey, xNextNode, index)
-      index += xNextNode.__descendantsCount || 0
+      index += xNextNode.descendantsCount || 0
 
       xIndex += 2
       yIndex += 2
@@ -1088,7 +1134,7 @@ function diffKeyedKids(xParent, yParent, patches, rootIndex) {
       index++
       insertNode(changes, localPatches, yKey, yNode, yIndex, inserts)
       diffHelp(xNode, yNextNode, localPatches, index)
-      index += xNode.__descendantsCount || 0
+      index += xNode.descendantsCount || 0
 
       xIndex += 1
       yIndex += 2
@@ -1099,11 +1145,11 @@ function diffKeyedKids(xParent, yParent, patches, rootIndex) {
     if (oldMatch) {
       index++
       removeNode(changes, localPatches, xKey, xNode, index)
-      index += xNode.__descendantsCount || 0
+      index += xNode.descendantsCount || 0
 
       index++
       diffHelp(xNextNode, yNode, localPatches, index)
-      index += xNextNode.__descendantsCount || 0
+      index += xNextNode.descendantsCount || 0
 
       xIndex += 2
       yIndex += 1
@@ -1115,11 +1161,11 @@ function diffKeyedKids(xParent, yParent, patches, rootIndex) {
       index++
       removeNode(changes, localPatches, xKey, xNode, index)
       insertNode(changes, localPatches, yKey, yNode, yIndex, inserts)
-      index += xNode.__descendantsCount || 0
+      index += xNode.descendantsCount || 0
 
       index++
       diffHelp(xNextNode, yNextNode, localPatches, index)
-      index += xNextNode.__descendantsCount || 0
+      index += xNextNode.descendantsCount || 0
 
       xIndex += 2
       yIndex += 2
@@ -1136,7 +1182,7 @@ function diffKeyedKids(xParent, yParent, patches, rootIndex) {
     var x = xKids[xIndex]
     var xNode = x[1]
     removeNode(changes, localPatches, x[0], xNode, index)
-    index += xNode.__descendantsCount || 0
+    index += xNode.descendantsCount || 0
     xIndex++
   }
 
@@ -1148,10 +1194,10 @@ function diffKeyedKids(xParent, yParent, patches, rootIndex) {
   }
 
   if (localPatches.length > 0 || inserts.length > 0 || endInserts) {
-    pushPatch(patches, __3_REORDER, rootIndex, {
-      __patches: localPatches,
-      __inserts: inserts,
-      __endInserts: endInserts
+    pushPatch(patches, OP_REORDER, rootIndex, {
+      subPatches: localPatches,
+      inserts: inserts,
+      endInserts: endInserts
     })
   }
 }
@@ -1166,29 +1212,29 @@ function insertNode(changes, localPatches, key, vnode, yIndex, inserts) {
   // never seen this key before
   if (!entry) {
     entry = {
-      __tag: __5_INSERT,
-      __vnode: vnode,
-      __index: yIndex,
-      __data: undefined
+      op: OP_INSERT,
+      vnode: vnode,
+      index: yIndex,
+      changes: undefined
     }
 
-    inserts.push({ __index: yIndex, __entry: entry })
+    inserts.push({ index: yIndex, entry: entry })
     changes[key] = entry
 
     return
   }
 
   // this key was removed earlier, a match!
-  if (entry.__tag === __5_REMOVE) {
-    inserts.push({ __index: yIndex, __entry: entry })
+  if (entry.op === OP_DELETE) {
+    inserts.push({ index: yIndex, entry: entry })
 
-    entry.__tag = __5_MOVE
+    entry.op = OP_MOVE
     var subPatches = []
-    diffHelp(entry.__vnode, vnode, subPatches, entry.__index)
-    entry.__index = yIndex
-    entry.__data.__data = {
-      __patches: subPatches,
-      __entry: entry
+    diffHelp(entry.vnode, vnode, subPatches, entry.index)
+    entry.index = yIndex
+    entry.changes.changes = {
+      subPatches: subPatches,
+      entry: entry
     }
 
     return
@@ -1203,27 +1249,27 @@ function removeNode(changes, localPatches, key, vnode, index) {
 
   // never seen this key before
   if (!entry) {
-    var patch = pushPatch(localPatches, __3_REMOVE, index, undefined)
+    var patch = pushPatch(localPatches, OP_REMOVE, index, undefined)
 
     changes[key] = {
-      __tag: __5_REMOVE,
-      __vnode: vnode,
-      __index: index,
-      __data: patch
+      op: OP_DELETE,
+      vnode: vnode,
+      index: index,
+      changes: patch
     }
 
     return
   }
 
   // this key was inserted earlier, a match!
-  if (entry.__tag === __5_INSERT) {
-    entry.__tag = __5_MOVE
+  if (entry.op === OP_INSERT) {
+    entry.op = OP_MOVE
     var subPatches = []
-    diffHelp(vnode, entry.__vnode, subPatches, index)
+    diffHelp(vnode, entry.vnode, subPatches, index)
 
-    pushPatch(localPatches, __3_REMOVE, index, {
-      __patches: subPatches,
-      __entry: entry
+    pushPatch(localPatches, OP_REMOVE, index, {
+      subPatches: subPatches,
+      entry: entry
     })
 
     return
@@ -1247,7 +1293,7 @@ function addDomNodes(domNode, vNode, patches, eventNode) {
     patches,
     0,
     0,
-    vNode.__descendantsCount,
+    vNode.descendantsCount,
     eventNode
   )
 }
@@ -1255,52 +1301,52 @@ function addDomNodes(domNode, vNode, patches, eventNode) {
 // assumes `patches` is non-empty and indexes increase monotonically.
 function addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode) {
   var patch = patches[i]
-  var index = patch.__index
+  var index = patch.index
 
   while (index === low) {
-    var patchType = patch.$
+    var patchType = patch.op
 
-    if (patchType === __3_THUNK) {
-      addDomNodes(domNode, vNode.__node, patch.__data, eventNode)
-    } else if (patchType === __3_REORDER) {
-      patch.__domNode = domNode
-      patch.__eventNode = eventNode
+    if (patchType === OP_THUNK) {
+      addDomNodes(domNode, vNode.node, patch.changes, eventNode)
+    } else if (patchType === OP_REORDER) {
+      patch.domNode = domNode
+      patch.eventNode = eventNode
 
-      var subPatches = patch.__data.__patches
+      var subPatches = patch.changes.subPatches
       if (subPatches.length > 0) {
         addDomNodesHelp(domNode, vNode, subPatches, 0, low, high, eventNode)
       }
-    } else if (patchType === __3_REMOVE) {
-      patch.__domNode = domNode
-      patch.__eventNode = eventNode
+    } else if (patchType === OP_REMOVE) {
+      patch.domNode = domNode
+      patch.eventNode = eventNode
 
-      var data = patch.__data
+      var data = patch.changes
       if (data) {
-        data.__entry.__data = domNode
-        var subPatches = data.__patches
+        data.entry.changes = domNode
+        var subPatches = data.subPatches
         if (subPatches.length > 0) {
           addDomNodesHelp(domNode, vNode, subPatches, 0, low, high, eventNode)
         }
       }
     } else {
-      patch.__domNode = domNode
-      patch.__eventNode = eventNode
+      patch.domNode = domNode
+      patch.eventNode = eventNode
     }
 
     i++
 
-    if (!(patch = patches[i]) || (index = patch.__index) > high) {
+    if (!(patch = patches[i]) || (index = patch.index) > high) {
       return i
     }
   }
 
-  var tag = vNode.$
+  var nodeType = vNode.nodeType
 
-  if (tag === __2_TAGGER) {
-    var subNode = vNode.__node
+  if (nodeType === TAGGED_NODE) {
+    var subNode = vNode.node
 
-    while (subNode.$ === __2_TAGGER) {
-      subNode = subNode.__node
+    while (subNode.nodeType === TAGGED_NODE) {
+      subNode = subNode.node
     }
 
     return addDomNodesHelp(
@@ -1314,14 +1360,14 @@ function addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode) {
     )
   }
 
-  // tag must be __2_NODE or __2_KEYED_NODE at this point
+  // tag must be NODE or KEYED_NODE at this point
 
-  var vKids = vNode.__kids
+  var vKids = vNode.children
   var childNodes = domNode.childNodes
   for (var j = 0; j < vKids.length; j++) {
     low++
-    var vKid = tag === __2_NODE ? vKids[j] : vKids[j][1]
-    var nextLow = low + (vKid.__descendantsCount || 0)
+    var vKid = nodeType === NODE ? vKids[j] : vKids[j][1]
+    var nextLow = low + (vKid.descendantsCount || 0)
     if (low <= index && index <= nextLow) {
       i = addDomNodesHelp(
         childNodes[j],
@@ -1332,7 +1378,7 @@ function addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode) {
         nextLow,
         eventNode
       )
-      if (!(patch = patches[i]) || (index = patch.__index) > high) {
+      if (!(patch = patches[i]) || (index = patch.index) > high) {
         return i
       }
     }
@@ -1355,7 +1401,7 @@ export const patch = (rootDomNode, oldVirtualNode, patches, eventNode) => {
 function applyPatchesHelp(rootDomNode, patches) {
   for (var i = 0; i < patches.length; i++) {
     var patch = patches[i]
-    var localDomNode = patch.__domNode
+    var localDomNode = patch.domNode
     var newNode = applyPatch(localDomNode, patch)
     if (localDomNode === rootDomNode) {
       rootDomNode = newNode
@@ -1366,67 +1412,67 @@ function applyPatchesHelp(rootDomNode, patches) {
 
 function applyPatch(domNode, patch) {
   const doc = domNode.ownerDocument
-  switch (patch.$) {
-    case __3_REDRAW: {
-      return applyPatchRedraw(domNode, patch.__data, patch.__eventNode)
+  switch (patch.op) {
+    case OP_REDRAW: {
+      return applyPatchRedraw(domNode, patch.changes, patch.eventNode)
     }
-    case __3_FACTS: {
-      applyFacts(domNode, patch.__eventNode, patch.__data)
+    case OP_FACTS: {
+      applyFacts(domNode, patch.eventNode, patch.changes)
       return domNode
     }
-    case __3_TEXT: {
-      domNode.replaceData(0, domNode.length, patch.__data)
+    case OP_TEXT: {
+      domNode.replaceData(0, domNode.length, patch.changes)
       return domNode
     }
-    case __3_THUNK: {
-      return applyPatchesHelp(domNode, patch.__data)
+    case OP_THUNK: {
+      return applyPatchesHelp(domNode, patch.changes)
     }
-    case __3_TAGGER: {
+    case OP_TAGGER: {
       if (domNode.elm_event_node_ref) {
-        domNode.elm_event_node_ref.__tagger = patch.__data
+        domNode.elm_event_node_ref.tagger = patch.changes
       } else {
         domNode.elm_event_node_ref = {
-          __tagger: patch.__data,
-          __parent: patch.__eventNode
+          tagger: patch.changes,
+          parent: patch.eventNode
         }
       }
       return domNode
     }
-    case __3_REMOVE_LAST: {
-      var data = patch.__data
-      for (var i = 0; i < data.__diff; i++) {
-        domNode.removeChild(domNode.childNodes[data.__length])
+    case OP_REMOVE_LAST: {
+      var data = patch.changes
+      for (var i = 0; i < data.diff; i++) {
+        domNode.removeChild(domNode.childNodes[data.offset])
       }
       return domNode
     }
-    case __3_APPEND: {
-      var data = patch.__data
-      var kids = data.__kids
-      var i = data.__length
+    case OP_APPEND: {
+      var data = patch.changes
+      var kids = data.children
+      var i = data.offset
       var theEnd = domNode.childNodes[i]
       for (; i < kids.length; i++) {
-        domNode.insertBefore(render(doc, kids[i], patch.__eventNode), theEnd)
+        domNode.insertBefore(render(doc, kids[i], patch.eventNode), theEnd)
       }
       return domNode
     }
-    case __3_REMOVE: {
-      var data = patch.__data
+    case OP_REMOVE: {
+      var data = patch.changes
       if (!data) {
         domNode.parentNode.removeChild(domNode)
         return domNode
       }
-      var entry = data.__entry
-      if (typeof entry.__index !== "undefined") {
+      var entry = data.entry
+      if (typeof entry.index !== "undefined") {
         domNode.parentNode.removeChild(domNode)
       }
-      entry.__data = applyPatchesHelp(domNode, data.__patches)
+      entry.changes = applyPatchesHelp(domNode, data.subPatches)
       return domNode
     }
-    case __3_REORDER: {
+    case OP_REORDER: {
       return applyPatchReorder(domNode, patch)
     }
-    case __3_CUSTOM: {
-      return patch.__data(domNode)
+    case OP_CUSTOM: {
+      return patch.changes(domNode)
     }
     default: {
       throw TypeError("Unknown operation")
@@ -1451,24 +1497,24 @@ function applyPatchRedraw(domNode, vNode, eventNode) {
 
 function applyPatchReorder(domNode, patch) {
   const doc = domNode.ownerDocument
-  var data = patch.__data
+  var data = patch.changes
 
   // remove end inserts
-  var frag = applyPatchReorderEndInsertsHelp(doc, data.__endInserts, patch)
+  var frag = applyPatchReorderEndInsertsHelp(doc, data.endInserts, patch)
 
   // removals
-  domNode = applyPatchesHelp(domNode, data.__patches)
+  domNode = applyPatchesHelp(domNode, data.subPatches)
 
   // inserts
-  var inserts = data.__inserts
+  var inserts = data.inserts
   for (var i = 0; i < inserts.length; i++) {
     var insert = inserts[i]
-    var entry = insert.__entry
+    var entry = insert.entry
     var node =
-      entry.__tag === __5_MOVE
-        ? entry.__data
-        : render(doc, entry.__vnode, patch.__eventNode)
-    domNode.insertBefore(node, domNode.childNodes[insert.__index])
+      entry.op === OP_MOVE
+        ? entry.changes
+        : render(doc, entry.vnode, patch.eventNode)
+    domNode.insertBefore(node, domNode.childNodes[insert.index])
   }
 
   // add end inserts
@@ -1487,12 +1533,12 @@ function applyPatchReorderEndInsertsHelp(doc, endInserts, patch) {
   var frag = doc.createDocumentFragment()
   for (var i = 0; i < endInserts.length; i++) {
     var insert = endInserts[i]
-    var entry = insert.__entry
+    var entry = insert.entry
     appendChild(
       frag,
-      entry.__tag === __5_MOVE
-        ? entry.__data
-        : render(doc, entry.__vnode, patch.__eventNode)
+      entry.op === OP_MOVE
+        ? entry.changes
+        : render(doc, entry.vnode, patch.eventNode)
     )
   }
   return frag
@@ -1535,18 +1581,18 @@ export function virtualize(root) {
     factList.push(style(name, value))
   }
 
-  var tag = root.tagName.toLowerCase()
+  var localName = root.localName
   var kidList = []
   var kids = root.childNodes
 
   for (var i = kids.length; i--; ) {
     kidList.unshift(virtualize(kids[i]))
   }
-  return node(tag, factList, kidList)
+  return node(localName, factList, kidList)
 }
 
 function dekey(keyedNode) {
-  var keyedKids = keyedNode.__kids
+  var keyedKids = keyedNode.children
   var len = keyedKids.length
   var kids = new Array(len)
   for (var i = 0; i < len; i++) {
@@ -1554,11 +1600,11 @@ function dekey(keyedNode) {
   }
 
   return {
-    $: __2_NODE,
-    __tag: keyedNode.__tag,
-    __facts: keyedNode.__facts,
-    __kids: kids,
+    nodeType: NODE,
+    localName: keyedNode.localName,
+    settings: keyedNode.settings,
+    children: kids,
     namespace: keyedNode.namespace,
-    __descendantsCount: keyedNode.__descendantsCount
+    descendantsCount: keyedNode.descendantsCount
   }
 }

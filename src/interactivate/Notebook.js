@@ -41,7 +41,7 @@ export type Message = Inbox.Message
 */
 
 export const init = () => {
-  const state = Data.init("temp://", `print: "Hello"`)
+  const state = Data.init(null, `print: "Hello"`)
   const selection = Data.selection(state)
   if (selection) {
     const [id, cell] = selection
@@ -53,10 +53,12 @@ export const init = () => {
   }
 }
 
-export const load = (path /*:string*/) => [
-  Data.load(path),
-  fx(Dat.readFile(new URL(`dat://${path}`)), Inbox.loadOk, Inbox.loadError)
+export const load = (url /*:URL*/) => [
+  Data.load(url),
+  fx(Dat.readFile(url), Inbox.loadOk, Inbox.loadError)
 ]
+
+export const open = (url /*:?URL*/) => (url ? load(url) : init())
 
 export const update = (message /*:Message*/, state /*:Model*/) => {
   switch (message.tag) {

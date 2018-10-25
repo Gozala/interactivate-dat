@@ -4,3 +4,8 @@ node_modules
 *.log
 **/.DS_Store
 Thumbs.db
+*.code-workspace
+src/@observablehq/notebook-inspector/*/
+src/@observablehq/notebook-inspector/*/**
+!src/@observablehq/notebook-inspector/src
+!src/@observablehq/notebook-inspector/src/**
