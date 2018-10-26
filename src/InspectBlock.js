@@ -2,7 +2,7 @@
 
 import { idle } from "./io/scheduler.js"
 import { never } from "./elm/basics.js"
-import { Inspector } from "./@observablehq/notebook-inspector.js"
+import { Inspector } from "./@observablehq/notebook-inspector/src/index.js"
 
 export default class InpectBlock extends HTMLElement {
   static define({ customElements } /*:window*/) {

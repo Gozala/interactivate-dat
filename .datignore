@@ -5,7 +5,9 @@ node_modules
 **/.DS_Store
 Thumbs.db
 *.code-workspace
-src/@observablehq/notebook-inspector/*/
-src/@observablehq/notebook-inspector/*/**
-!src/@observablehq/notebook-inspector/src
-!src/@observablehq/notebook-inspector/src/**
+src/@observablehq/notebook-inspector/.*
+src/@observablehq/notebook-inspector/test
+src/@observablehq/notebook-inspector/*.html
+src/@observablehq/notebook-inspector/*.json
+*.lock
+rollup.config.js

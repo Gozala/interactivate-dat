@@ -13,7 +13,7 @@ export type Message =
   | { tag: "Receive", value: Payload }
   | { tag: "Notebook", value: Notebook.Message }
   | { tag: "publish", value:true }
-  | { tag: "published", value:URL }
+  | { tag: "published", value:true }
   | { tag: "publishFailed", value:Error }
 */
 

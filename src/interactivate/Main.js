@@ -22,6 +22,7 @@ import * as Decoder from "./Main/Decoder.js"
 import * as Notebook from "./Notebook.js"
 
 /*::
+import type { IO } from "../elm/Widget.js"
 export type Model = Data.Model
 export type Message = Inbox.Message
 */
@@ -37,7 +38,10 @@ export const init = (options /*:?{state:Model}*/, url /*:URL*/) => {
   }
 }
 
-export const update = (message /*:Message*/, state /*:Model*/) => {
+export const update = (
+  message /*:Message*/,
+  state /*:Model*/
+) /*:[Model, IO<Message>]*/ => {
   switch (message.tag) {
     case "Notebook": {
       const [notebook, fx] = Notebook.update(

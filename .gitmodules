@@ -1,0 +1,3 @@
+[submodule "src/@observablehq/notebook-inspector"]
+	path = src/@observablehq/notebook-inspector
+	url = git@github.com:Gozala/notebook-inspector.git
