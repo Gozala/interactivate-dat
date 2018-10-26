@@ -1,14 +1,29 @@
 // @flow strict
 
-import { diff, patch, virtualize } from "./virtual-dom.js"
+import { diff, patch, virtualize } from "./VirtualDOM.js"
 
 /*::
-import type { Node, Port } from "./virtual-dom.js"
+import type { Node, Port } from "./VirtualDOM.js"
 
 export type { Node }
 
+export opaque type ThreadID:string = string;
+
+export interface Thread {
+  exit(?Error):void;
+}
+
+
+export type {Port}
+
+export interface Main<message> extends Port<message> {
+  link(Thread):ThreadID;
+  unlink(Thread):void;
+  linked(ThreadID):?Thread;
+}
+
 export interface IO<message> {
-  perform(Port<message>):mixed;
+  perform(Main<message>):mixed;
 }
 export type Transaction<message, state> = [state, IO<message>]
 
@@ -41,7 +56,36 @@ export class Widget /*::<a, model, widget, target, config>*/ {
   view:model => widget
   root:target
   node:widget
+  threads:{[ThreadID]:Thread}
+  threadID:number
   */
+  link(thread /*:Thread*/) /*:ThreadID*/ {
+    if (this.threadID == null) {
+      this.threadID = 0
+      this.threads = {}
+    }
+
+    const id = `@${++this.threadID}`
+    this.threads[id] = thread
+    return id
+  }
+  unlink(thread /*:Thread*/) {
+    const { threads } = this
+    if (threads) {
+      for (const id in threads) {
+        if (thread === threads[id]) {
+          delete threads[id]
+          break
+        }
+      }
+    }
+  }
+  linked(threadID /*:ThreadID*/) /*:?Thread*/ {
+    const { threads } = this
+    if (threads) {
+      return threads[threadID]
+    }
+  }
   async send(message /*:a*/) {
     await 0
     this.sync(message)
@@ -63,7 +107,7 @@ export class Widget /*::<a, model, widget, target, config>*/ {
   }
 }
 
-class ElementWidget /*::<a, model, config> extends Widget<a, model, Node<a>, Element, config>*/ {
+class ElementWidget /*::<a, model, config>*/ extends Widget /*::<a, model, Node<a>, Element, config>*/ {
   mount(root /*:Element*/) /*:Node<a>*/ {
     return virtualize(root)
   }

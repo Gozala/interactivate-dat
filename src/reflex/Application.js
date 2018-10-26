@@ -1,9 +1,9 @@
 // @flow strict
 
-import { DocumentWidget } from "./document.js"
+import { DocumentWidget } from "./Document.js"
 
 /*::
-import type { Doc, Node, Program, Widget, Transaction } from "./document.js"
+import type { Doc, Node, Program, Widget, Transaction } from "./Document.js"
 
 export type { Node, Program, Transaction, Widget, Doc }
 

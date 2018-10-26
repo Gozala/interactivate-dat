@@ -1,7 +1,5 @@
 // @flow strict
 
-import { never } from "../../elm/basics.js"
-
 /*::
 import type { ID } from "./Data.js"
 import * as Inbox from "../Cell/Inbox.js"

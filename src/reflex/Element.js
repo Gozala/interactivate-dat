@@ -1,8 +1,8 @@
 //@flow strict
 
-import { node, text, doc } from "./virtual-dom.js"
+import { node, text, doc, customElement } from "./VirtualDOM.js"
 /*::
-import type {Node, Attribute} from "./virtual-dom.js"
+import type { Node, Attribute } from "./VirtualDOM.js"
 interface Factory {
   <a>(attributes?:Attribute<a>[], children?:Node<a>[]):Node<a>
 }
@@ -13,7 +13,7 @@ const factory = (tag) /*:Factory*/ => /*::<a>*/ (
   children /*::?:Node<a>[]*/
 ) /*:Node<a>*/ => node(tag, settings, children)
 
-export { text, node, doc }
+export { text, node, doc, customElement }
 export const html = factory("html")
 export const link = factory("link")
 export const meta = factory("meta")

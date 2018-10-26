@@ -1,6 +1,6 @@
 // @flow strict
 
-import { future } from "../../elm/Future.js"
+import { future } from "../../reflex/Future.js"
 import { send, request } from "../../io/worker.js"
 
 class Sandbox {
@@ -147,5 +147,5 @@ export const setSelection = future(async (id, dir) => {
   }
 })
 
-const analyzer = new URL("/src/interactivate/Worker/analyzer.js", location.href)
+const analyzer = new URL("/src/Interactivate/Worker/analyzer.js", location.href)
 const analyze = source => request(analyzer, source)

@@ -1,7 +1,7 @@
 // @flow strict
 
 /*::
-import type { EventDecoder } from "../../elm/virtual-dom.js"
+import type { EventDecoder } from "../../reflex/VirtualDOM.js"
 */
 import * as Inbox from "./Inbox.js"
 import * as Decoder from "../../Decoder.flow/Decoder.js"

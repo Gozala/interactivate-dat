@@ -1,6 +1,6 @@
 // @flow strict
 
-import { nothing } from "./basics.js"
+import { nothing } from "./Basics.js"
 import { future } from "./Future.js"
 
 /*::

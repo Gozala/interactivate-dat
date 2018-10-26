@@ -1,6 +1,6 @@
 // @flow strict
 
-import { nofx, fx, batch } from "../elm/fx.js"
+import { nofx, fx, batch } from "../reflex/Effect.js"
 import {
   text,
   i,
@@ -11,9 +11,9 @@ import {
   doc,
   body,
   button
-} from "../elm/element.js"
-import { on, className } from "../elm/attribute.js"
-import { never } from "../elm/basics.js"
+} from "../reflex/Element.js"
+import { on, className } from "../reflex/Attribute.js"
+import { never } from "../reflex/Basics.js"
 
 import * as Data from "./Main/Data.js"
 import * as Inbox from "./Main/Inbox.js"
@@ -22,7 +22,7 @@ import * as Decoder from "./Main/Decoder.js"
 import * as Notebook from "./Notebook.js"
 
 /*::
-import type { IO } from "../elm/Widget.js"
+import type { IO } from "../reflex/Widget.js"
 export type Model = Data.Model
 export type Message = Inbox.Message
 */

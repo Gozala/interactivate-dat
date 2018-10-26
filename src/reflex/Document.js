@@ -1,11 +1,11 @@
 // @flow strict
 
-import { virtualize, diff, patch, doc } from "./virtual-dom.js"
-import { Widget } from "./widget.js"
+import { virtualize, diff, patch, doc } from "./VirtualDOM.js"
+import { Widget } from "./Widget.js"
 
 /*::
 import type { Program, Transaction } from "./widget.js"
-import type { Node, Doc } from "./virtual-dom.js"
+import type { Node, Doc } from "./VirtualDOM.js"
 
 export type { Node, Doc, Program, Widget, Transaction }
 

@@ -1,7 +1,7 @@
 // @flow strict
 
 import * as Notebook from "../Notebook/Data.js"
-import { always } from "../../elm/basics.js"
+import { always } from "../../reflex/Basics.js"
 
 /*::
 export type Model = {

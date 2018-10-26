@@ -1,11 +1,19 @@
 // @flow strict
 
-import { keyedNode, node, on } from "../elm/virtual-dom.js"
-import { text, section, div, output } from "../elm/element.js"
-import { className, data, attribute, property, id } from "../elm/attribute.js"
-import { never, always } from "../elm/basics.js"
-import { nofx, fx, send, batch } from "../elm/fx.js"
-import { future } from "../elm/Future.js"
+import { keyedNode, node, on } from "../reflex/VirtualDOM.js"
+import { text, section, div, output, customElement } from "../reflex/Element.js"
+import {
+  className,
+  data,
+  attribute,
+  property,
+  id
+} from "../reflex/Attribute.js"
+import { never, always } from "../reflex/Basics.js"
+import { nofx, fx, send, batch } from "../reflex/Effect.js"
+import { future } from "../reflex/Future.js"
+import InspectBlock from "../Element/InspectBlock.js"
+import CodeBlock from "../Element/CodeBlock.js"
 
 import * as Data from "./Cell/Data.js"
 import * as Inbox from "./Cell/Inbox.js"
@@ -14,7 +22,7 @@ import * as Decoder from "./Cell/Decoder.js"
 import * as Effect from "./Cell/Effect.js"
 
 /*::
-import type { Node } from "../elm/virtual-dom.js"
+import type { Node } from "../reflex/VirtualDOM.js"
 export type Model = Data.Model
 export type Message = Inbox.Message
 */
@@ -114,10 +122,13 @@ export const view = (
   )
 
 const viewOutput = (result, key) =>
-  node("inspect-block", [className("flex"), property("source", result)])
+  customElement("inspect-block", InspectBlock, [
+    className("flex"),
+    property("source", result)
+  ])
 
 const viewCodeBlock = (input, key) =>
-  node("code-block", [
+  customElement("code-block", CodeBlock, [
     id(key),
     property("source", input),
     on("focus", Decoder.focus),

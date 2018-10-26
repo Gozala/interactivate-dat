@@ -1,12 +1,18 @@
 // @flow strict
 
-import { attribute, property, style, on } from "./virtual-dom.js"
+import { attribute, property, style, on } from "./VirtualDOM.js"
 /*::
-import type {Attribute} from "./virtual-dom.js"
+import type {Attribute} from "./VirtualDOM.js"
 */
 
 export { style, attribute, property, on }
 // // TODO: defaultValue, defaultChecked, innerHTML, suppressContentEditableWarning, suppressHydrationWarning, style
+
+export const defaultValue = /*::<a>*/ (value /*:string*/) /*:Attribute<a>*/ =>
+  property("defaultValue", value)
+
+export const value = /*::<a>*/ (value /*:string*/) /*:Attribute<a>*/ =>
+  property("value", value)
 
 export const acceptCharset = /*::<a>*/ (value /*:string*/) /*:Attribute<a>*/ =>
   property("accept-charset", value)
@@ -43,7 +49,7 @@ export const id = setHTMLAttribute("id")
 export const accept = setHTMLAttribute("accept")
 export const type = setHTMLAttribute("type")
 export const placeholder = setHTMLAttribute("placeholder")
-export const value = setHTMLAttribute("value")
+export const title = setHTMLAttribute("title")
 
 const setBooleanHTMLAttribute = name => /*::<a>*/ (
   value /*:boolean*/

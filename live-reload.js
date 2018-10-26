@@ -235,8 +235,8 @@
     script.onload = null
     script.resolve = null
     script.reject = null
+    script.src = null
     script.remove()
-    script.src = ""
     switch (event.type) {
       case "load":
         return resolve(url)
@@ -245,28 +245,35 @@
     }
   }
 
-  const load = version =>
+  const upgrade = version =>
+    Promise.all(scripts.map(script => upgradeTo(script, version)))
+
+  const upgradeTo = (script, version) =>
     new Promise((resolve, reject) => {
-      const url = `dat://${location.host}+${version}/src/interactivate.js`
-      const script = document.createElement("script")
-      script.defer = "defer"
-      script.async = "async"
-      script.type = "module"
-      script.src = url
-      script.resolve = resolve
-      script.reject = reject
-      script.onerror = wait
-      script.onload = wait
-      document.head.appendChild(script)
+      const { pathname } = new URL(script.src, baseURI)
+      const url = `dat://${location.host}+${version}${pathname}`
+      script.setAttribute("version", version)
+      const newScript = document.createElement("script")
+      newScript.type = "module"
+      newScript.defer = true
+      newScript.async = true
+      newScript.dataset.liveReload = true
+      newScript.src = url
+      newScript.resolve = resolve
+      newScript.reject = reject
+      newScript.onerror = wait
+      newScript.onload = wait
+      document.head.appendChild(newScript)
     })
+
+  // Capture baseURI as we want to ignore changes triggered by pushState.
+  const baseURI = document.baseURI
+  const query = "script[type=module][data-live-reload]"
+  const scripts = [...document.querySelectorAll(query)]
 
   if (location.protocol === "dat:") {
     const archive = await DatArchive.load(`dat://${location.host}`)
-    const script = document.createElement("script")
-    script.type = "module"
-
     const { isOwner, version } = await archive.getInfo()
-    await load(version)
 
     if (isOwner) {
       const view = HotSwap.insert(document.documentElement)
@@ -274,24 +281,26 @@
       view.idle = true
       view.version = version
 
-      const watcher = archive.watch(["*.js", "**/*.js"])
-      watcher.addEventListener("changed", async ({ path }) => {
-        console.log(`Reload application since document has changed ${path}`)
-        view.idle = false
+      if (scripts.length > 0) {
+        const watcher = archive.watch(["*.js", "**/*.js"])
+        watcher.addEventListener("changed", async ({ path }) => {
+          view.idle = false
 
-        const { version } = await archive.getInfo()
-        view.version = version
+          const { version } = await archive.getInfo()
+          view.version = version
 
-        if (view.enabled) {
-          view.visible = true
-          console.log(`Loading version ${version}`)
-          await load(version)
-          view.idle = true
-          view.visible = false
-        }
-      })
+          if (view.enabled) {
+            view.visible = true
+            await upgrade(version)
+            view.idle = true
+            view.visible = false
+          }
+        })
 
-      view.visible = false
+        view.visible = false
+      } else {
+        view.visible = false
+      }
     }
   }
 })()

@@ -1,6 +1,6 @@
 // @flow strict
 
-import { always } from "../../elm/basics.js"
+import { always } from "../../reflex/Basics.js"
 /*::
 import * as Notebook from "../Notebook.js"
 

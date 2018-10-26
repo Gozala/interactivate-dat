@@ -1,6 +1,6 @@
 // @flow strict
 
-import { future } from "../elm/Future.js"
+import { future } from "../reflex/Future.js"
 
 export const focus = future(async id => {
   const element = document.getElementById(id)

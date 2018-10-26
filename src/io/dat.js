@@ -1,10 +1,10 @@
 // @flow strict
 
-import { DatArchive } from "../beaker.js"
-import { future } from "../elm/Future.js"
+import { DatArchive } from "../beaker/DatArchive.js"
+import { future } from "../reflex/Future.js"
 
 /*::
-import type { Archive, Select, ArchiveInfo, Timeout, Stat, Encoding } from "../beaker.js"
+import type { Archive, Select, ArchiveInfo, Timeout, Stat, Encoding } from "../beaker/DatArchive.js"
 */
 
 const archives /*:{[string]:Archive}*/ = {}

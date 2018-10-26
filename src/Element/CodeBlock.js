@@ -1,18 +1,18 @@
 // @flow strict
 
-import { regex, re } from "./Data/RegExp.js"
-import CodeMirror from "./codemirror.js"
-import JSMODE from "./codemirror/mode/javascript/javascript.js"
-import matchBrackets from "./codemirror/addon/edit/matchbrackets.js"
+import { regex, re } from "../Data/RegExp.js"
+import CodeMirror from "../codemirror.js"
+import JSMODE from "../codemirror/mode/javascript/javascript.js"
+import matchBrackets from "../codemirror/addon/edit/matchbrackets.js"
 // import * as interactivate from "./codemirror-addon/interactivate.js"
-import { idle } from "./io/scheduler.js"
-import { never } from "./elm/basics.js"
+import { idle } from "../io/scheduler.js"
+import { never } from "../reflex/Basics.js"
 JSMODE(CodeMirror)
 matchBrackets(CodeMirror)
 // interactivate.plugin(CodeMirror)
 
 /*::
-import type { Editor } from "./codemirror.js"
+import type { Editor } from "../codemirror.js"
 
 type EventType =
   | "changes"
@@ -93,22 +93,6 @@ class Options {
 
 const BaseElement /*:typeof HTMLElement*/ = top.HTMLElement
 export default class CodeBlock extends BaseElement {
-  static define({ customElements } /*:window*/) {
-    const element = customElements.get("code-block")
-    if (element) {
-      Object.setPrototypeOf(element.prototype, CodeBlock.prototype)
-    } else {
-      customElements.define(
-        "code-block",
-        class extends CodeBlock {
-          constructor() {
-            super()
-            this.init()
-          }
-        }
-      )
-    }
-  }
   /*::
   options:Options
   navigationKeys:Object
@@ -119,7 +103,8 @@ export default class CodeBlock extends BaseElement {
   Pass:mixed
   handleEvent:Event => mixed
   */
-  init() {
+  constructor() {
+    super()
     this.navigationKeys = this.navigationKeys || {
       Up: () => this.onPreviousLine(),
       Down: () => this.onNextLine(),

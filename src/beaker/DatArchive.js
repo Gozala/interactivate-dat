@@ -74,12 +74,12 @@ export interface Archive extends NetworkActivityStream {
   readdir(
     Path,
     options: { recursive?: boolean, timeout?: number, stat: true }
-  ): Promise<Stat[]>;
+  ): Promise<DirectoryEntry>;
   
   writeFile(Path, string, options?: { encoding: Encoding }): Promise<void>;
   writeFile(Path, ArrayBuffer, options?: { encoding: "binary" }): Promise<void>;
 
-  mkdir(Path): Promise<void>;
+  mkdir(Path, options?:?Timeout): Promise<void>;
 
   unlink(Path): Promise<void>;
 
@@ -139,6 +139,12 @@ export interface Stat {
   mtime: Date;
   ctime: Date;
 }
+
+export interface DirectoryEntry {
+  name:string;
+  stat:Stat;
+}
+
 
 export type Encoding = "utf-8" | "utf8" | "base64" | "hex"
 

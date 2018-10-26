@@ -6,7 +6,12 @@ export class Future {
     this.params = params
   }
   then(onResolve, onReject) {
-    return this.perform().then(onResolve, onReject)
+    const promise = this.perform()
+    if (promise && promise.then) {
+      return promise.then(onResolve, onReject)
+    } else {
+      return Promise.resolve(promise).then(onResolve, onReject)
+    }
   }
   perform() {
     return this.execute(...this.params)

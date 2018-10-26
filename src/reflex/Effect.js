@@ -1,14 +1,11 @@
 // @flow strict
 
-import { nothing } from "./basics.js"
+import { nothing } from "./Basics.js"
 
 /*::
-import type { IO } from "./Widget"
+import type { IO, Thread, ThreadID, Main } from "./Widget"
 import type { Task } from "./Future"
 
-export interface Port<a> {
-  send(a):mixed
-}
 
 export interface Effect <a> extends IO<a> {
   map <b>(a => b):Effect<b>;
@@ -29,7 +26,7 @@ class Send /*::<a> implements Effect<a>*/ {
   constructor(message /*:a*/) {
     this.message = message
   }
-  perform(main /*:Port<a>*/) {
+  perform(main /*:Main<a>*/) {
     main.send(this.message)
   }
   map /*::<b>*/(tag /*:a => b*/) /*:Effect<b>*/ {
@@ -52,7 +49,7 @@ class FX /*::<a, value>*/ {
     this.onOk = onOk
     this.onError = onError
   }
-  async execute(main /*:Port<a>*/) {
+  async execute(main /*:Main<a>*/) {
     try {
       const value = await this.task.perform()
       const message = this.onOk(value)
@@ -66,7 +63,7 @@ class FX /*::<a, value>*/ {
       }
     }
   }
-  perform(main /*:Port<a>*/) {
+  perform(main /*:Main<a>*/) {
     this.execute(main)
   }
   map /*::<b>*/(tag /*:a => b*/) /*:Effect<b>*/ {
@@ -81,7 +78,7 @@ class Batch /*::<a>*/ {
   constructor(effects /*:Effect<a>[]*/) {
     this.effects = effects
   }
-  perform(main /*:Port<a>*/) {
+  perform(main /*:Main<a>*/) {
     for (const fx of this.effects) {
       fx.perform(main)
     }
@@ -91,19 +88,28 @@ class Batch /*::<a>*/ {
   }
 }
 
-class Tagged /*::<a, b>*/ {
+export class Tagged /*::<a, b>*/ {
   /*::
   fx: Effect<a>
   tag: a => b
-  port:Port<b>
+  port:Main<b>
   */
   constructor(fx /*:Effect<a>*/, tag /*:a => b*/) {
     this.fx = fx
     this.tag = tag
   }
-  perform(main /*:Port<b>*/) {
+  perform(main /*:Main<b>*/) {
     this.port = main
     this.fx.perform(this)
+  }
+  link(thread /*:Thread*/) {
+    return this.port.link(thread)
+  }
+  unlink(thread /*:Thread*/) {
+    return this.port.unlink(thread)
+  }
+  linked(id /*:ThreadID*/) {
+    return this.port.linked(id)
   }
   send(message /*:a*/) {
     return this.port.send(this.tag(message))

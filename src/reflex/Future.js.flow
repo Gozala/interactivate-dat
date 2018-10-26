@@ -6,6 +6,7 @@ export type Task<a> = Promise<a> & {
 
 type Future<fn: Function> = $Call<
   {
+    <a, b, c, $>((a, b, c) => Promise<$> | $): (a, b, c) => Task<$>,
     <a, b, $>((a, b) => Promise<$> | $): (a, b) => Task<$>,
     <a, $>((a) => Promise<$> | $): a => Task<$>,
     <$>(() => Promise<$> | $): () => Task<$>

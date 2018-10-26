@@ -1,6 +1,6 @@
 // @flow strict
 
-import { nofx, fx, batch } from "../elm/fx.js"
+import { nofx, fx, batch } from "../reflex/Effect.js"
 import {
   text,
   main,
@@ -17,7 +17,7 @@ import {
   select,
   progress,
   form
-} from "../elm/element.js"
+} from "../reflex/Element.js"
 import {
   className,
   src,
@@ -26,12 +26,12 @@ import {
   data,
   attribute,
   property
-} from "../elm/attribute.js"
-import { never } from "../elm/basics.js"
+} from "../reflex/Attribute.js"
+import { never } from "../reflex/Basics.js"
 
 import * as Data from "./Notebook/Data.js"
 import * as Inbox from "./Notebook/Inbox.js"
-import { keyedNode, node } from "../elm/virtual-dom.js"
+import { keyedNode, node } from "../reflex/VirtualDOM.js"
 import * as Cell from "./Cell.js"
 import * as Dat from "../io/dat.js"
 
@@ -41,7 +41,7 @@ export type Message = Inbox.Message
 */
 
 export const init = () => {
-  const state = Data.init(null, `print: "Hello"`)
+  const state = Data.init(null, `show: "Hello"`)
   const selection = Data.selection(state)
   if (selection) {
     const [id, cell] = selection

@@ -1,9 +1,9 @@
 // @flow strict
 
-import { nofx } from "../elm/fx.js"
-import { always } from "../elm/basics"
-import { text, code, output } from "../elm/element.js"
-import * as Widget from "../elm/widget.js"
+import { nofx } from "../reflex/Effect.js"
+import { always } from "../reflex/Basics.js"
+import { text, code, output } from "../reflex/Element.js"
+import * as Widget from "../reflex/Widget.js"
 
 // /*::
 // export type Transaction<message, model> = Widget.Transaction<message, model>

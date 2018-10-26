@@ -1,7 +1,7 @@
 // @flow status
 
-import { never } from "../elm/basics.js"
-import { future } from "../elm/Future.js"
+import { never } from "../reflex/Basics.js"
+import { future } from "../reflex/Future.js"
 
 class Service {
   static spawn(url /*:URL*/) /*:Service*/ {

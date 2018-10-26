@@ -1,33 +1,18 @@
 // @flow strict
 
-import { idle } from "./io/scheduler.js"
-import { never } from "./elm/basics.js"
-import { Inspector } from "./@observablehq/notebook-inspector/src/index.js"
+import { idle } from "../io/scheduler.js"
+import { never } from "../reflex/Basics.js"
+import { Inspector } from "../@observablehq/notebook-inspector/src/index.js"
 
 export default class InpectBlock extends HTMLElement {
-  static define({ customElements } /*:window*/) {
-    const element = customElements.get("inspect-block")
-    if (element) {
-      Object.setPrototypeOf(element.prototype, this.prototype)
-    } else {
-      customElements.define(
-        "inspect-block",
-        class extends this {
-          constructor() {
-            super()
-            this.init()
-          }
-        }
-      )
-    }
-  }
   /*::
   root:ShadowRoot
   inspectedValue:mixed
   output:?HTMLElement
   inspector:{fulfilled(mixed):void, pending(mixed):void};
   */
-  init() {
+  constructor() {
+    super()
     this.root = this.attachShadow({ mode: "open", delegatesFocus: true })
     this.inspectedValue = undefined
   }

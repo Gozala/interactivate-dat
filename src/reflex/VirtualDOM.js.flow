@@ -18,27 +18,33 @@ declare export class Attribute<a> {
 export type KeyedNode<a> = [string, Node<a>]
 
 declare export function node<a>(
-  nodeName: string,
+  localName: string,
   attributes?: Attribute<a>[],
   children?: Node<a>[]
 ): Node<a>
 
+declare export function customElement<a>(
+  localName: string,
+  constructor: Class<HTMLElement>,
+  attributes?: Attribute<a>[]
+): Node<a>
+
 declare export function keyedNode<a>(
-  nodeName: string,
+  localName: string,
   attributes?: Attribute<a>[],
   children?: KeyedNode<a>[]
 ): Node<a>
 
 declare export function keyedNodeNS<a>(
   namespace: string,
-  nodeName: string,
+  localName: string,
   attributes?: Attribute<a>[],
   children?: KeyedNode<a>[]
 ): Node<a>
 
 declare export function nodeNS<a>(
   namespace: string,
-  nodeName: string,
+  localName: string,
   attributes?: Attribute<a>[],
   children?: Node<a>[]
 ): Node<a>
