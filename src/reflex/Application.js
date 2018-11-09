@@ -32,7 +32,7 @@ class ApplicationWidget /*::<a, model, config>*/ extends DocumentWidget /*::<a, 
       case "navigate": // manually notify when we do pushState replaceState
       case "popstate":
       case "hashchange":
-        return this.send(this.onURLChange(this.getURL()))
+        return this.thread.send(this.onURLChange(this.getURL()))
       case "click": {
         if (
           !event.ctrlKey &&
@@ -55,7 +55,7 @@ class ApplicationWidget /*::<a, model, config>*/ extends DocumentWidget /*::<a, 
             ? this.onInternalURLRequest(next)
             : this.onExternalURLRequest(next)
 
-          return this.send(message)
+          return this.thread.send(message)
         }
       }
     }
@@ -81,7 +81,9 @@ export const spawn = /*::<a, model, config>*/ (
   self.onInternalURLRequest = application.onInternalURLRequest
   self.onURLChange = application.onURLChange
   self.root = root
-  self.node = self.mount(root)
+  self.node = root.widget ? root.widget.node : self.mount(root)
+  self.thread = root.widget ? root.widget.thread : self.fork(root)
+  root.widget = self
   self.addListeners(document)
 
   self.transact(application.init(options, self.getURL()))

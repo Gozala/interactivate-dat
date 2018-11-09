@@ -43,33 +43,45 @@ export const update = (
   state /*:Model*/
 ) /*:[Model, IO<Message>]*/ => {
   switch (message.tag) {
-    case "Notebook": {
+    case "notebook": {
       const [notebook, fx] = Notebook.update(
         message.value,
         Data.notebook(state)
       )
       return [Data.updateNotebook(state, notebook), fx.map(Inbox.notebook)]
     }
-    case "publish": {
-      const resource = Data.toResource(state)
+    case "save": {
+      const url = Data.toURL(state)
+      const content = Data.toText(state)
       const effect =
-        resource == null
-          ? nofx
+        url && Data.isOwner(state)
+          ? fx(Effect.save(url, content), Inbox.onSaved, Inbox.onSaveError)
           : fx(
-              Effect.save(resource.url, resource.content),
-              Inbox.onPublishOk,
-              Inbox.onPublishError
+              Effect.saveAs(content, url),
+              Inbox.onPublished,
+              Inbox.onSaveError
             )
       return [Data.save(state), effect]
     }
-    case "published": {
+    case "saved": {
       return [Data.saved(state), nofx]
     }
-    case "publishFailed": {
+    case "published": {
+      const url = message.value
+      return [
+        Data.published(url, state),
+        fx(
+          Effect.navigate(
+            new URL(`/${url.hostname}${url.pathname}`, location.href)
+          )
+        )
+      ]
+    }
+    case "saveError": {
       return [Data.saveFailed(message.value, state), nofx]
     }
-    case "Receive": {
-      return receive(message.value, state)
+    case "route": {
+      return route(message.value, state)
     }
     default: {
       return never(message)
@@ -77,13 +89,13 @@ export const update = (
   }
 }
 
-const receive = (message, state) => {
+const route = (message, state) => {
   switch (message.tag) {
     case "navigate": {
-      return [state, fx(Effect.navigate(message.value))]
+      return init(null, message.value)
     }
     case "navigated": {
-      return init(null, message.value)
+      return [state, nofx]
     }
     case "load": {
       return [state, fx(Effect.load(message.value))]
@@ -101,18 +113,18 @@ export const view = (state /*:Model*/) =>
       [className("sans-serif")],
       [
         Notebook.view(Data.notebook(state)).map(Inbox.notebook),
-        viewSaveButton(Data.status(state))
+        viewSaveButton(state)
       ]
     )
   )
 
-const viewSaveButton = status =>
+const viewSaveButton = state =>
   button(
     [
-      className(`fixed bottom-2 right-2 publish ${status}`),
-      on("click", Decoder.publish)
+      className(`fixed bottom-2 right-2 publish ${Data.status(state)}`),
+      on("click", Decoder.save)
     ],
-    [text("Save")]
+    [Data.isOwner(state) ? text("Save") : text("Fork")]
   )
 
 export const { onInternalURLRequest, onExternalURLRequest, onURLChange } = Inbox

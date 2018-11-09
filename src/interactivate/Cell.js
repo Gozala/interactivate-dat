@@ -32,7 +32,7 @@ export const update = (message /*:Message*/, state /*:Model*/) => {
     case "change": {
       const { value } = message
       const cell = Data.updateInput(value, state)
-      const tokens = tokenize(value)
+      const tokens = Data.tokenize(value)
       switch (tokens.length) {
         case 0: {
           return [cell, send(Inbox.join(1))]
@@ -61,7 +61,7 @@ export const update = (message /*:Message*/, state /*:Model*/) => {
     case "split": {
       return [
         state,
-        fx(Effect.evaluate("out", state.input), Inbox.output, Inbox.output)
+        fx(Effect.evaluate(state.id, state.input), Inbox.output, Inbox.output)
       ]
     }
     case "focus": {
@@ -89,27 +89,6 @@ export const setSelection = (
 ) => {
   return [state, fx(Effect.setSelection(`cell-${id}`, direction))]
 }
-
-export const tokenize = (input /*:string*/) /*:string[]*/ => {
-  const tokens = []
-  let match = null
-  let offset = 0
-  while ((match = CELL_PATTERN.exec(input))) {
-    const start = offset
-    const end = match.index + match[0].length
-    const token = input.slice(start, end)
-    tokens.push(token)
-    offset = end
-  }
-
-  if (offset > 0 && offset < input.length) {
-    tokens.push(input.slice(offset))
-  }
-
-  return tokens
-}
-
-const CELL_PATTERN = /(^[A-Za-z_]\w*\s*\:.*$)/gm
 
 export const view = (
   state /*:Model*/,

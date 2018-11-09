@@ -1,6 +1,6 @@
 // @flow strict
 
-import { idle } from "../io/scheduler.js"
+import { idle } from "../Effect/scheduler.js"
 /*::
 import type {CodeMirror, Editor} from "../codemirror"
 */

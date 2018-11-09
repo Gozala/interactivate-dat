@@ -5,27 +5,72 @@ import * as SelectionMap from "../../Data/SelectionMap.js"
 
 /*::
 export type ID = SelectionMap.ID
+
 export type Model = {
   url:?URL;
+  isOwner:boolean;
+  nextID:number;
   status:"loading"|"ready"|"error";
   cells:SelectionMap.SelectionMap<Cell.Model>;
 }
 
 */
 
-const notebook = (url, status, cells = SelectionMap.empty()) => ({
+const notebook = (
   url,
+  isOwner,
+  nextID,
+  status,
+  cells = SelectionMap.empty()
+) => ({
+  url,
+  isOwner,
+  nextID,
   status,
   cells
 })
 
-export const init = (url /*:?URL*/, input /*:string*/) /*:Model*/ => {
-  const cell = Cell.init(input)
-  const cells = SelectionMap.select(cell, SelectionMap.fromValues([cell]))
-  return notebook(url, "ready", cells)
+export const init = (
+  url /*:?URL*/,
+  isOwner /*:boolean*/,
+  input /*:string*/
+) /*:Model*/ => {
+  const cells = []
+  let n = 0
+  let baseURL = url ? `${url.href}#` : "#"
+  const chunks = Cell.tokenize(input)
+  const tokens = chunks.length === 0 ? [input] : chunks
+  for (const token of tokens) {
+    cells.push(Cell.init(`${baseURL}${++n}`, token))
+  }
+
+  const [cell] = cells
+  return notebook(
+    url,
+    isOwner,
+    ++n,
+    "ready",
+    SelectionMap.select(cell, SelectionMap.fromValues(cells))
+  )
 }
 
-export const load = (url /*:URL*/) /*:Model*/ => notebook(url, "loading")
+export const load = (url /*:URL*/) /*:Model*/ =>
+  notebook(url, false, 0, "loading")
+
+export const updateURL = (
+  url /*:URL*/,
+  isOwner /*:boolean*/,
+  state /*:Model*/
+) /*:Model*/ => ({
+  ...state,
+  cells: SelectionMap.map(
+    cell =>
+      Cell.updateID(`${url.href}${cell.id.substr(cell.id.indexOf("#"))}`, cell),
+    state.cells
+  ),
+  url,
+  isOwner
+})
 
 export const failLoad = (state /*:Model*/) =>
   state.status === "loading" ? { ...state, status: "error" } : state
@@ -34,12 +79,14 @@ export const append = (
   entries /*:{input:string}[]*/,
   state /*:Model*/
 ) /*:Model*/ => {
+  const { url, nextID } = state
+  const $ = url ? `${url.href}#` : `#`
   const cells = SelectionMap.append(
-    entries.map(({ input }) => Cell.init(input)),
+    entries.map(({ input }, n) => Cell.init(`${$}${nextID + n + 1}`, input)),
     state.cells
   )
 
-  return { ...state, cells }
+  return { ...state, cells, nextID: nextID + entries.length }
 }
 
 export const insert = (
@@ -48,14 +95,17 @@ export const insert = (
   entries /*:{input:string}[]*/,
   state /*:Model*/
 ) /*:Model*/ => {
+  const { url, nextID } = state
+  const $ = url ? `${url.href}#` : `#`
+
   const cells = SelectionMap.insert(
     id,
     dir,
-    entries.map(({ input }) => Cell.init(input)),
+    entries.map(({ input }, n) => Cell.init(`${$}${nextID + n + 1}`, input)),
     state.cells
   )
 
-  return { ...state, cells }
+  return { ...state, cells, nextID: nextID + entries.length }
 }
 
 export const removeCells = (ids /*:ID[]*/, state /*:Model*/) /*:Model*/ => {
@@ -78,7 +128,8 @@ export const replaceCell = (
 
 export const joinCell = (id /*:ID*/, dir /*:-1|1*/, state /*:Model*/) => {
   const cells = SelectionMap.join(
-    (left, right) => Cell.init(`${left.input}\n${right.input}`, right.output),
+    (left, right) =>
+      Cell.init(left.id, `${left.input}\n${right.input}`, right.output),
     id,
     dir,
     state.cells
@@ -125,9 +176,9 @@ export const firstCell = (state /*:Model*/) /*:?Cell.Model*/ =>
   SelectionMap.valueByIndex(0, state.cells)
 
 export const textInput = (state /*:Model*/) /*:string*/ => {
-  let text = ""
+  const chunks = []
   for (const value of SelectionMap.values(state.cells)) {
-    text = `${text}${Cell.input(value)}`
+    chunks.push(Cell.input(value))
   }
-  return text
+  return chunks.join("\n\n")
 }

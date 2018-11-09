@@ -2,9 +2,9 @@
 
 import * as Decoder from "../../Decoder.flow/Decoder.js"
 
-export const publish = Decoder.ok({
+export const save = Decoder.ok({
   message: {
-    tag: "publish",
+    tag: "save",
     value: true
   }
 })

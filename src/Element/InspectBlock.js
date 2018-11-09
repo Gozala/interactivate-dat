@@ -1,6 +1,5 @@
 // @flow strict
 
-import { idle } from "../io/scheduler.js"
 import { never } from "../reflex/Basics.js"
 import { Inspector } from "../@observablehq/notebook-inspector/src/index.js"
 

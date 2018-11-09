@@ -4,12 +4,20 @@ import { virtualize, diff, patch, doc } from "./VirtualDOM.js"
 import { Widget } from "./Widget.js"
 
 /*::
-import type { Program, Transaction } from "./widget.js"
+import type { Program, MainThread, Transaction } from "./widget.js"
 import type { Node, Doc } from "./VirtualDOM.js"
 
 export type { Node, Doc, Program, Widget, Transaction }
 
-export type Root = {body:Element, title:string, location:Location}
+export type Root = {
+  body:Element,
+  title:string,
+  location:Location,
+  widget:?{
+    node:Doc<any>;
+    thread:MainThread<any>
+  }
+}
 */
 
 export class DocumentWidget /*::<a, model, config>*/ extends Widget /*::<a, model, Doc<a>, Root, config>*/ {
@@ -20,14 +28,21 @@ export class DocumentWidget /*::<a, model, config>*/ extends Widget /*::<a, mode
     }
     return root
   }
-  mount(document /*:Root*/) /*:Doc<a>*/ {
-    return doc(document.title, virtualize(document.body))
+  mount(root /*:Root*/) /*:Doc<a>*/ {
+    return root.widget
+      ? root.widget.node
+      : doc(root.title, virtualize(root.body))
+  }
+  fork(root /*:Root*/) /*:MainThread<a>*/ {
+    const thread = root.widget ? root.widget.thread : Widget.fork(this)
+    thread.root = this
+    return thread
   }
   render(state /*:model*/) {
     const newDocument = this.view(state)
     const renderedDocument = this.node
     const delta = diff(renderedDocument.body, newDocument.body)
-    patch(this.root.body, renderedDocument.body, delta, this)
+    patch(this.root.body, renderedDocument.body, delta, this.thread)
     this.node = newDocument
     if (renderedDocument.title !== newDocument.title) {
       this.root.title = newDocument.title
@@ -46,6 +61,8 @@ export const spawn = /*::<a, model, config>*/ (
   self.view = view
   self.root = root
   self.node = self.mount(root)
+  self.thread = self.fork(root)
+  root.widget = self
   self.transact(init(options))
   return self
 }

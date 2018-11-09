@@ -1,7 +1,7 @@
 // @flow strict
 
 import { future } from "../../reflex/Future.js"
-import { send, request } from "../../io/worker.js"
+import { send, request } from "../../Effect/worker.js"
 
 class Sandbox {
   /*::
@@ -110,7 +110,7 @@ const generateBindings = ({ bindings, globals, labels }) => {
 
 let lastEvalindex = 0
 
-export const evaluate = future(async (id /*:string*/, code /*:string*/) => {
+export const evaluate = future(async (url /*:string*/, code /*:string*/) => {
   const evalID = `ø${++lastEvalindex}${Date.now().toString(32)}`
   const index = Math.max(code.lastIndexOf("\n"), 0)
   const expression = code.slice(code.indexOf(":", index) + 1).trim()
@@ -120,14 +120,14 @@ export const evaluate = future(async (id /*:string*/, code /*:string*/) => {
   if (result.error) {
     switch (result.error.name) {
       case "SyntaxError": {
-        throw (window[id] = new SyntaxError(result.error.message))
+        throw new SyntaxError(result.error.message)
       }
       default: {
-        throw (window[id] = new Error(result.error))
+        throw new Error(result.error)
       }
     }
   } else {
-    const sourceURL = `\n//# sourceURL=./eval.js`
+    const sourceURL = `\n//# sourceURL=${url}`
     const refs = generateBindings(result.ok)
     const code = `${source};${evalID}(${expression},${refs})${sourceURL}`
     const { bindings, value } = await sandbox.evaluate(evalID, code)

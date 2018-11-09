@@ -47,18 +47,28 @@ export type Doc<a> = {
   title:string;
   body:Node<a>
 }
+
+export interface Sync <a> {
+  sync(a):void;
+}
 */
 
-export class Widget /*::<a, model, widget, target, config>*/ {
+export class MainThread /*::<a>*/ {
   /*::
-  state:model;
-  update:(a, model) =>Transaction<a, model>;
-  view:model => widget
-  root:target
-  node:widget
+  root:Sync<a>
   threads:{[ThreadID]:Thread}
   threadID:number
   */
+  constructor(root /*:Sync<a>*/) {
+    this.root = root
+  }
+  async send(message /*:a*/) {
+    await 0
+    this.root.sync(message)
+  }
+  sync(message /*:a*/) {
+    this.root.sync(message)
+  }
   link(thread /*:Thread*/) /*:ThreadID*/ {
     if (this.threadID == null) {
       this.threadID = 0
@@ -86,9 +96,25 @@ export class Widget /*::<a, model, widget, target, config>*/ {
       return threads[threadID]
     }
   }
-  async send(message /*:a*/) {
-    await 0
-    this.sync(message)
+}
+
+export class Widget /*::<a, model, widget, target, config>*/ {
+  /*::
+  thread:MainThread<a>;
+  state:model;
+  update:(a, model) =>Transaction<a, model>;
+  view:model => widget
+  root:target
+  node:widget
+  */
+  get version() {
+    const stack = new Error().stack
+    const start = stack.indexOf("+")
+    const end = stack.indexOf("/", start)
+    return stack.slice(start, end)
+  }
+  static fork(self /*:Sync<a>*/) /*:MainThread<a>*/ {
+    return new MainThread(self)
   }
   sync(message /*:a*/) {
     this.transact(this.update(message, this.state))
@@ -96,7 +122,7 @@ export class Widget /*::<a, model, widget, target, config>*/ {
   transact([state, fx] /*:Transaction<a, model>*/) {
     this.state = state
     this.render(state)
-    fx.perform(this)
+    fx.perform(this.thread)
   }
   render(state /*:model*/) {}
   mount(root /*:target*/) /*:widget*/ {
@@ -115,7 +141,7 @@ class ElementWidget /*::<a, model, config>*/ extends Widget /*::<a, model, Node<
     const newNode = this.view(state)
     const renderedNode = this.node
     const delta = diff(renderedNode, newNode)
-    patch(this.root, renderedNode, delta, this)
+    patch(this.root, renderedNode, delta, this.thread)
     this.node = newNode
   }
 }
@@ -126,6 +152,7 @@ export const spawn = /*::<a, model, config>*/ (
   root /*:Element*/
 ) /*:Widget<a, model, Node<a>, Element, config>*/ => {
   const self = new ElementWidget()
+  self.thread = Widget.fork(self)
   self.update = update
   self.view = view
   self.root = root

@@ -55,6 +55,18 @@ class Text {
   map(tagger) {
     return this
   }
+  toInnerHTML() {
+    return ""
+  }
+  toOuterHTML(indent) {
+    return `${indent}${this.text}`
+  }
+  get innerHTML() {
+    return this.toInnerHTML()
+  }
+  get outerHTML() {
+    return this.toOuterHTML()
+  }
 }
 
 export const text = content => new Text(content)
@@ -76,6 +88,21 @@ class CustomElement {
   map(tagger) {
     return new TaggerNode(tagger, this)
   }
+  serializeSettings(key = "") {
+    return Node.prototype.serializeSettings.call(this, key)
+  }
+  toOuterHTML(indent = "", key = "") {
+    return Node.prototype.toOuterHTML.call(this, indent, key)
+  }
+  toInnerHTML(indent = "") {
+    return Node.prototype.toInnerHTML.call(this, indent)
+  }
+  get outerHTML() {
+    return this.toOuterHTML()
+  }
+  get innerHTML() {
+    return this.toInnerHTML()
+  }
 }
 
 export const customElement = (localName, constructor, settings) =>
@@ -92,6 +119,69 @@ class Node {
   }
   map(tagger) {
     return new TaggerNode(tagger, this)
+  }
+  toInnerHTML(indent = "") {
+    const { children } = this
+    let html = ""
+    if (children.length > 0) {
+      const childIndent = `${indent}  `
+      for (const child of children) {
+        html += `\n${child.toOuterHTML(indent, "")}`
+      }
+    }
+    return html
+  }
+  serializeSettings(key) {
+    let buffer = ""
+
+    if (key !== "") {
+      buffer += ` key=${key}`
+    }
+
+    const { settings } = this
+    for (const type in settings) {
+      const group = settings[type]
+      for (const name in group) {
+        const value = group[name]
+        switch (type) {
+          case SETTING_ATTRIBUTE: {
+            buffer += ` ${name}="${value}"`
+            break
+          }
+          case SETTING_EVENT: {
+            buffer += ` on${name}`
+            break
+          }
+          case SETTING_PROPERTY: {
+            buffer += ` ${name}=${value}`
+          }
+        }
+      }
+    }
+
+    if (this.namespace) {
+      buffer += ` xmlns="${namespace}"`
+    }
+
+    return buffer
+  }
+  toOuterHTML(indent = "", key = "") {
+    const { localName } = this
+    const open = `<${localName}${this.serializeSettings(key)}>`
+    const close = `</${localName}>`
+    const innerHTML = this.toInnerHTML(`${indent}  `)
+
+    if (innerHTML === "") {
+      return `${indent}${open}${close}`
+    } else {
+      return `${indent}${open}${innerHTML}\n${indent}${close}`
+    }
+  }
+  get innerHTML() {
+    return this.toInnerHTML()
+  }
+  get outerHTML() {
+    return this.toOuterHTML()
   }
 }
 
@@ -137,6 +227,28 @@ class KeyedNode {
   map(tagger) {
     return new TaggerNode(tagger, this)
   }
+  serializeSettings(key = "") {
+    return Node.prototype.serializeSettings.call(this, key)
+  }
+  toOuterHTML(indent = "", key = "") {
+    return Node.prototype.toOuterHTML.call(this, indent, key)
+  }
+  toInnerHTML(indent = "") {
+    let html = ""
+    const { children } = this
+    if (children.length > 0) {
+      for (const [key, child] of children) {
+        html += `\n${child.toOuterHTML(indent, key)}`
+      }
+    }
+    return html
+  }
+  get outerHTML() {
+    return this.toOuterHTML()
+  }
+  get innerHTML() {
+    return this.toInnerHTML()
+  }
 }
 
 export const keyedNodeNS = (namespace, localName, factList, kidList) => {
@@ -175,6 +287,22 @@ class CustomNode {
   map(tagger) {
     return new TaggerNode(tagger, this)
   }
+  serializeSettings(key = "") {
+    return Node.prototype.serializeSettings.call(this, key)
+  }
+  toOuterHTML(indent = "", key = "") {
+    const settings = key === "" ? ` key=${key}` : ""
+    return `${indent}<custom-element${settings}><custom-element>`
+  }
+  toInnerHTML(indent = "") {
+    return ""
+  }
+  get outerHTML() {
+    return this.toOuterHTML()
+  }
+  get innerHTML() {
+    return this.toInnerHTML()
+  }
 }
 
 export const custom = (factList, model, render, diff) =>
@@ -187,6 +315,25 @@ class Doc {
   }
   map(tagger) {
     return new Doc(this.title, this.body.map(tagger))
+  }
+  toOuterHTML(indent = "", key = "") {
+    const innerHTML = this.toInnerHTML(`${indent}  `)
+    return `${indent}<html>\n${innerHTML}\n${indent}<\html>`
+  }
+  toInnerHTML(indent = "") {
+    const head = `<head><title>${this.title}</title></head>`
+    const body = this.body.toOuterHTML(indent)
+    if (body === "") {
+      return `${indent}${head}`
+    } else {
+      return `${indent}${head}\n${body}`
+    }
+  }
+  get outerHTML() {
+    return this.toOuterHTML()
+  }
+  get innerHTML() {
+    return this.toInnerHTML()
   }
 }
 
@@ -204,6 +351,18 @@ class TaggerNode {
   map(tagger) {
     return new TaggerNode(tagger, this)
   }
+  toOuterHTML(indent = "", key = "") {
+    return this.node.toOuterHTML(indent, key)
+  }
+  toInnerHTML(indent = "") {
+    return this.node.toInnerHTML(indent)
+  }
+  get outerHTML() {
+    return this.toOuterHTML()
+  }
+  get innerHTML() {
+    return this.toInnerHTML()
+  }
 }
 
 export const map = (tagger, node) => new TaggerNode(tagger, node)
@@ -219,6 +378,29 @@ class Thunk {
   }
   map(tagger) {
     return new TaggerNode(tagger, this)
+  }
+  toNode() {
+    const { node } = this
+    if (node) {
+      return node
+    } else {
+      const node = this.force()
+      this.node = node
+      return node
+    }
+  }
+  toOuterHTML(indent = "", key = "") {
+    return this.toNode().toOuterHTML(indent, key)
+  }
+  toInnerHTML(indent = "") {
+    const node = (vNode.node = vNode.force())
+    return this.toNode().toInnerHTML(indent)
+  }
+  get outerHTML() {
+    return this.toOuterHTML()
+  }
+  get innerHTML() {
+    return this.toInnerHTML()
   }
 }
 
@@ -274,22 +456,9 @@ export var lazy8 = function(func, a, b, c, d, e, f, g, h) {
 
 // FACTS
 
-class VirtualDOMEvent {
-  constructor(type, handler) {
-    this.nodeType = SETTING_EVENT
-    this.type = type
-    this.handler = handler
-  }
-  map(tag) {
-    return new VirtualDOMEvent(this.type, this.handler.map(tag))
-  }
-  equal(other) {
-    return this.type === other.type && this.handler.equal(other.handler)
-  }
-}
-
-export var on = function(key, handler) {
-  return new VirtualDOMEvent(key, handler)
+const notaggers = Object.freeze([])
+export const on = function(key, handler) {
+  return new EventHandler(key, handler, Normal, notaggers)
 }
 
 class VirtualDOMStyle {
@@ -385,65 +554,73 @@ export function noJavaScriptOrHtmlUri__DEBUG(value) {
 
 // MAP FACTS
 
-class TaggedDecoder {
-  constructor(tag, decoder) {
-    this.tag = tag
-    this.decoder = decoder
-  }
-  decode(input) {
-    const result = this.decoder.decode(input)
-    if (!(result instanceof Error)) {
-      return this.tag(result)
-    } else {
-      return result
-    }
-  }
-}
-
 class EventHandler {
-  constructor(decoder, eventPhase) {
+  constructor(type, decoder, eventPhase, taggers) {
+    this.nodeType = SETTING_EVENT
+    this.type = type
     this.decoder = decoder
     this.eventPhase = eventPhase
-    this.tag = null
+    this.taggers = taggers
   }
   map(tag) {
-    return new TaggedEventHandler(tag, this, this.eventPhase)
+    const { type, decoder, eventPhase, taggers } = this
+    return new EventHandler(type, decoder, eventPhase, [tag, ...taggers])
   }
-  decode(input) {
-    return this.decoder.decode(input)
+  forwardEvent(event, eventTarget) {
+    const { eventPhase, taggers } = this
+    const result = this.decoder.decode(event)
+
+    if (result instanceof Error) {
+      return
+    }
+
+    const tag = this.eventPhase
+
+    // 0 = Normal
+    // 1 = MayStopPropagation
+    // 2 = MayPreventDefault
+    // 3 = Custom
+
+    const { stopPropagation, preventDefault } = result
+    if (stopPropagation) {
+      event.stopPropagation()
+    }
+
+    if (preventDefault) {
+      event.preventDefault()
+    }
+
+    let message = result.message
+    for (let tag of this.taggers) {
+      message = tag(message)
+    }
+
+    let currentTarget = eventTarget
+    while (currentTarget.tagger) {
+      const { tagger } = currentTarget
+      if (typeof tagger == "function") {
+        message = tagger(message)
+      } else {
+        for (let i = tagger.length; i--; ) {
+          message = tagger[i](message)
+        }
+      }
+
+      currentTarget = currentTarget.parent
+    }
+
+    if (stopPropagation) {
+      currentTarget.sync(message) // stopPropagation implies isSync
+    } else {
+      currentTarget.send(message)
+    }
   }
   equal(other) {
     return (
+      this.type === other.type &&
       this.eventPhase === other.eventPhase &&
       this.decoder === other.decoder &&
-      this.tag === other.tag
-    )
-  }
-}
-
-class TaggedEventHandler {
-  constructor(tag, handler, eventPhase) {
-    this.tag = tag
-    this.handler = handler
-    this.eventPhase = eventPhase
-  }
-  map(tag) {
-    return new TaggedEventHandler(tag, this, this.eventPhase)
-  }
-  decode(input) {
-    const result = this.handler.decode(input)
-    if (result instanceof Error) {
-      return result
-    } else {
-      const { message, preventDefault, stopPropagation } = result
-      return { message: this.tag(message), preventDefault, stopPropagation }
-    }
-  }
-  equal(other) {
-    return (
-      this.eventPhase === other.eventPhase &&
-      this.handler.equal(other.handler) &&
-      this.tag === other.tag
+      pairwiseRefEqual(this.taggers, other.taggers)
     )
   }
 }
@@ -479,7 +656,7 @@ function organizeFacts(factList) {
       case SETTING_EVENT: {
         const { type, handler } = fact
         var subFacts = facts[nodeType] || (facts[nodeType] = {})
-        subFacts[type] = handler
+        subFacts[type] = fact
         break
       }
       case SETTING_ATTRIBUTE: {
@@ -700,34 +877,46 @@ function applyAttrsNS(domNode, nsAttrs) {
 
 // APPLY EVENTS
 
+class EventRouter {
+  constructor() {
+    this.handlers = {}
+    this.handleEvent = this.handleEvent.bind(this)
+    this.target = null
+  }
+  handleEvent(event) {
+    this.handlers[event.type].forwardEvent(event, this.target)
+  }
+}
+
 function applyEvents(domNode, eventNode, events) {
-  var allCallbacks = domNode.elmFs || (domNode.elmFs = {})
+  const router =
+    domNode.eventRouter || (domNode.eventRouter = new EventRouter())
+  router.target = eventNode
+  const { handlers, handleEvent } = router
 
   for (var key in events) {
-    var newHandler = events[key]
-    var oldCallback = allCallbacks[key]
+    const oldHandler = handlers[key]
+    const newHandler = events[key]
 
     if (!newHandler) {
-      domNode.removeEventListener(key, oldCallback)
-      allCallbacks[key] = undefined
+      domNode.removeEventListener(key, handleEvent)
+      handlers[key] = null
       continue
     }
 
-    if (oldCallback) {
-      var oldHandler = oldCallback.handler
+    if (oldHandler) {
       if (oldHandler.type === newHandler.type) {
-        oldCallback.handler = newHandler
+        handlers[key] = newHandler
         continue
+      } else {
+        domNode.removeEventListener(key, handleEvent)
       }
-      domNode.removeEventListener(key, oldCallback)
     }
 
-    oldCallback = makeCallback(eventNode, newHandler)
     const { eventPhase } = newHandler
-
+    handlers[key] = newHandler
     const passive = eventPhase == Normal || eventPhase == MayStopPropagation
-    domNode.addEventListener(key, oldCallback, passiveSupported && { passive })
-    allCallbacks[key] = oldCallback
+    domNode.addEventListener(key, handleEvent, passiveSupported && { passive })
   }
 }
 
@@ -753,59 +942,6 @@ const Normal = 0
 const MayStopPropagation = 1
 const MayPreventDefault = 2
 const Custom = 3
-
-function makeCallback(eventNode, handler) {
-  function callback(event) {
-    var handler = callback.handler
-    var result = handler.decode(event)
-
-    if (result instanceof Error) {
-      return
-    }
-
-    var tag = handler.eventPhase
-
-    // 0 = Normal
-    // 1 = MayStopPropagation
-    // 2 = MayPreventDefault
-    // 3 = Custom
-
-    var { message, stopPropagation, preventDefault } = result
-
-    if (stopPropagation) {
-      event.stopPropagation()
-    }
-
-    if (preventDefault) {
-      event.preventDefault()
-    }
-
-    var currentEventNode = eventNode
-
-    var tagger
-    var i
-    while ((tagger = currentEventNode.tagger)) {
-      if (typeof tagger == "function") {
-        message = tagger(message)
-      } else {
-        for (var i = tagger.length; i--; ) {
-          message = tagger[i](message)
-        }
-      }
-      currentEventNode = currentEventNode.parent
-    }
-
-    if (stopPropagation) {
-      currentEventNode.sync(message) // stopPropagation implies isSync
-    } else {
-      currentEventNode.send(message)
-    }
-  }
-
-  callback.handler = handler
-
-  return callback
-}
 
 // DIFF
 

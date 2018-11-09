@@ -33,7 +33,7 @@ import * as Data from "./Notebook/Data.js"
 import * as Inbox from "./Notebook/Inbox.js"
 import { keyedNode, node } from "../reflex/VirtualDOM.js"
 import * as Cell from "./Cell.js"
-import * as Dat from "../io/dat.js"
+import * as Effect from "./Notebook/Effect.js"
 
 /*::
 export type Model = Data.Model
@@ -41,13 +41,13 @@ export type Message = Inbox.Message
 */
 
 export const init = () => {
-  const state = Data.init(null, `show: "Hello"`)
+  const state = Data.init(null, true, `show: "Hello"`)
   const selection = Data.selection(state)
   if (selection) {
     const [id, cell] = selection
     const [cell2, fx] = Cell.setSelection(-1, id, cell)
     const state2 = Data.replaceCell(id, cell2, state)
-    return [state2, fx.map(Inbox.cell(id))]
+    return [state2, fx.map(Inbox.onCell(id))]
   } else {
     return [state, nofx]
   }
@@ -55,20 +55,21 @@ export const init = () => {
 
 export const load = (url /*:URL*/) => [
   Data.load(url),
-  fx(Dat.readFile(url), Inbox.loadOk, Inbox.loadError)
+  fx(Effect.load(url), Inbox.onLoaded, Inbox.onLoadError)
 ]
 
 export const open = (url /*:?URL*/) => (url ? load(url) : init())
 
 export const update = (message /*:Message*/, state /*:Model*/) => {
   switch (message.tag) {
-    case "LoadNotebook": {
-      return [Data.init(state.url, message.value), nofx]
+    case "onLoaded": {
+      const { url, content, isOwner } = message.value
+      return [Data.init(url, isOwner, content), nofx]
     }
-    case "LoadFailed": {
+    case "onLoadError": {
       return [Data.failLoad(state), nofx]
     }
-    case "Cell": {
+    case "onCell": {
       const [id, payload] = message.value
       return updateCell(state, id, payload)
     }
@@ -85,7 +86,7 @@ const updateCell = (state, id, message) => {
       const cell = Data.cellByID(id, state)
       if (cell) {
         const [cell2, fx] = Cell.update(message, cell)
-        return [Data.replaceCell(id, cell2, state), fx.map(Inbox.cell(id))]
+        return [Data.replaceCell(id, cell2, state), fx.map(Inbox.onCell(id))]
       } else {
         return [state, nofx]
       }
@@ -112,9 +113,9 @@ const updateCell = (state, id, message) => {
 
         if (targetCell === Data.selectedCell(state)) {
           const [next, fx2] = setSelection(1, data)
-          return [next, batch(fx.map(Inbox.cell(id)), fx2)]
+          return [next, batch(fx.map(Inbox.onCell(id)), fx2)]
         } else {
-          return [data, fx.map(Inbox.cell(id))]
+          return [data, fx.map(Inbox.onCell(id))]
         }
       } else {
         return [state, nofx]
@@ -139,7 +140,7 @@ const setSelection = (dir, state) => {
   if (selection) {
     const [id, cell] = selection
     const [cell2, fx] = Cell.setSelection(dir, id, cell)
-    return [Data.replaceCell(id, cell2, data), fx.map(Inbox.cell(id))]
+    return [Data.replaceCell(id, cell2, data), fx.map(Inbox.onCell(id))]
   } else {
     return [data, nofx]
   }
@@ -165,32 +166,32 @@ const viewHeader = state =>
       )
     ],
     [
-      // picture(
-      //   [className("inline-flex")],
-      //   [
-      //     source([srcset("dat://gozala.hashbase.io/profile.jpeg")]),
-      //     source([srcset("./icons/fontawesome/svgs/solid/user.svg")]),
-      //     img([className("br-100 h3 w3 mw3 dib")])
-      //   ]
-      // ),
-      // div(
-      //   [className("w-100 pl2 pl3-ns f6")],
-      //   [
-      //     a(
-      //       [className("flex items-center no-underline black hover-blue")],
-      //       [text("Irakli Gozalishvili")]
-      //     ),
-      //     div(
-      //       [className("mt1 lh-copy black-50")],
-      //       [
-      //         text(
-      //           "Curios tinkerer at Mozilla that fancies functional paradigm. Environmentalist; Husband; Father; LISPer with recently developed interest in static type systems."
-      //         )
-      //       ]
-      //     )
-      //   ]
-      // ),
-      // div([className("dtc v-mid")])
+      picture(
+        [className("inline-flex")],
+        [
+          source([srcset("dat://gozala.hashbase.io/profile.jpeg")]),
+          source([srcset("./icons/fontawesome/svgs/solid/user.svg")]),
+          img([className("br-100 h3 w3 mw3 dib")])
+        ]
+      ),
+      div(
+        [className("w-100 pl2 pl3-ns f6")],
+        [
+          a(
+            [className("flex items-center no-underline black hover-blue")],
+            [text("Irakli Gozalishvili")]
+          ),
+          div(
+            [className("mt1 lh-copy black-50")],
+            [
+              text(
+                "Curios tinkerer at Mozilla that fancies functional paradigm. Environmentalist; Husband; Father; LISPer with recently developed interest in static type systems."
+              )
+            ]
+          )
+        ]
+      ),
+      div([className("dtc v-mid")])
     ]
   )
 
@@ -203,5 +204,5 @@ const viewDocument = state =>
 
 const viewCell = ([key, cell, focused]) => [
   key,
-  Cell.view(cell, `cell-${key}`, focused).map(Inbox.cell(key))
+  Cell.view(cell, `cell-${key}`, focused).map(Inbox.onCell(key))
 ]

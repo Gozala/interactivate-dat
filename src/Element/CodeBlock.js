@@ -5,7 +5,7 @@ import CodeMirror from "../codemirror.js"
 import JSMODE from "../codemirror/mode/javascript/javascript.js"
 import matchBrackets from "../codemirror/addon/edit/matchbrackets.js"
 // import * as interactivate from "./codemirror-addon/interactivate.js"
-import { idle } from "../io/scheduler.js"
+import { idle } from "../Effect/scheduler.js"
 import { never } from "../reflex/Basics.js"
 JSMODE(CodeMirror)
 matchBrackets(CodeMirror)

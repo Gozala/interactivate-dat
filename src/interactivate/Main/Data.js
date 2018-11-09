@@ -37,6 +37,11 @@ export const saved = (state /*:Model*/) /*:Model*/ => ({
   saveRequest: notSaving()
 })
 
+export const published = (url /*:URL*/, state /*:Model*/) /*:Model*/ => ({
+  ...updateNotebook(state, Notebook.updateURL(url, true, notebook(state))),
+  saveRequest: notSaving()
+})
+
 export const saveFailed = (error /*:Error*/, state /*:Model*/) /*:Model*/ => ({
   ...state,
   saveRequest: savingFailed(error)
@@ -68,13 +73,13 @@ export const isModified = (state /*:Model*/) /*:boolean*/ =>
   Notebook.textInput(state.notebook.before) !==
   Notebook.textInput(state.notebook.after)
 
-export const toResource = (
-  state /*:Model*/
-) /*:?{url:URL, content:string}*/ => {
-  const note = notebook(state)
-  const { url } = note
-  return url ? { url, content: Notebook.textInput(note) } : null
-}
+export const toURL = (state /*:Model*/) /*:?URL*/ => notebook(state).url
+
+export const toText = (state /*:Model*/) /*:string*/ =>
+  Notebook.textInput(notebook(state))
+
+export const isOwner = (state /*:Model*/) /*:boolean*/ =>
+  notebook(state).isOwner
 
 export const status = (state /*:Model*/) /*:string*/ => {
   switch (state.saveRequest.tag) {

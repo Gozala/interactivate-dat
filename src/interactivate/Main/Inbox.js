@@ -4,41 +4,47 @@ import { always } from "../../reflex/Basics.js"
 /*::
 import * as Notebook from "../Notebook.js"
 
-export type Payload =
+export type Route =
   | { tag: "navigate", value:URL }
   | { tag: "load", value:URL }
   | { tag: "navigated", value:URL }
 
 export type Message =
-  | { tag: "Receive", value: Payload }
-  | { tag: "Notebook", value: Notebook.Message }
-  | { tag: "publish", value:true }
-  | { tag: "published", value:true }
-  | { tag: "publishFailed", value:Error }
+  | { tag: "route", value: Route }
+  | { tag: "notebook", value: Notebook.Message }
+  | { tag: "save", value:true }
+  | { tag: "published", value:URL }
+  | { tag: "saved", value:true }
+  | { tag: "saveError", value:Error }
 */
 
 export const notebook = (value /*:Notebook.Message*/) /*:Message*/ => ({
-  tag: "Notebook",
+  tag: "notebook",
   value
 })
 
-export const receive = (value /*:Payload*/) /*:Message*/ => ({
-  tag: "Receive",
+export const route = (value /*:Route*/) /*:Message*/ => ({
+  tag: "route",
   value
 })
 
-export const onPublishOk = always({ tag: "published", value: true })
+export const onSaved = always({ tag: "saved", value: true })
 
-export const onPublishError = (value /*: Error*/) => ({
-  tag: "publishFailed",
+export const onSaveError = (value /*: Error*/) => ({
+  tag: "saveError",
+  value
+})
+
+export const onPublished = (value /*: URL*/) => ({
+  tag: "published",
   value
 })
 
 export const onInternalURLRequest = (value /*:URL*/) =>
-  receive({ tag: "navigate", value })
+  route({ tag: "navigate", value })
 
 export const onExternalURLRequest = (value /*:URL*/) =>
-  receive({ tag: "load", value })
+  route({ tag: "load", value })
 
 export const onURLChange = (value /*:URL*/) =>
-  receive({ tag: "navigated", value })
+  route({ tag: "navigated", value })
