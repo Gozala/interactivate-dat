@@ -166,32 +166,32 @@ const viewHeader = state =>
       )
     ],
     [
-      picture(
-        [className("inline-flex")],
-        [
-          source([srcset("dat://gozala.hashbase.io/profile.jpeg")]),
-          source([srcset("./icons/fontawesome/svgs/solid/user.svg")]),
-          img([className("br-100 h3 w3 mw3 dib")])
-        ]
-      ),
-      div(
-        [className("w-100 pl2 pl3-ns f6")],
-        [
-          a(
-            [className("flex items-center no-underline black hover-blue")],
-            [text("Irakli Gozalishvili")]
-          ),
-          div(
-            [className("mt1 lh-copy black-50")],
-            [
-              text(
-                "Curios tinkerer at Mozilla that fancies functional paradigm. Environmentalist; Husband; Father; LISPer with recently developed interest in static type systems."
-              )
-            ]
-          )
-        ]
-      ),
-      div([className("dtc v-mid")])
+      // picture(
+      //   [className("inline-flex")],
+      //   [
+      //     source([srcset("dat://gozala.hashbase.io/profile.jpeg")]),
+      //     source([srcset("./icons/fontawesome/svgs/solid/user.svg")]),
+      //     img([className("br-100 h3 w3 mw3 dib")])
+      //   ]
+      // ),
+      // div(
+      //   [className("w-100 pl2 pl3-ns f6")],
+      //   [
+      //     a(
+      //       [className("flex items-center no-underline black hover-blue")],
+      //       [text("Irakli Gozalishvili")]
+      //     ),
+      //     div(
+      //       [className("mt1 lh-copy black-50")],
+      //       [
+      //         text(
+      //           "Curios tinkerer at Mozilla that fancies functional paradigm. Environmentalist; Husband; Father; LISPer with recently developed interest in static type systems."
+      //         )
+      //       ]
+      //     )
+      //   ]
+      // ),
+      // div([className("dtc v-mid")])
     ]
   )
 
