@@ -1,5 +1,13 @@
 {
   "title": "interactivate",
   "description": "Interactive codebook",
-  "fallback_page": "index.html"
+  "fallback_page": "index.html",
+  "experimental": {
+    "apis": [
+      "globalFetch",
+      "datPeers",
+      "capturePage",
+      "library"
+    ]
+  }
 }
