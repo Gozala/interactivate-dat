@@ -2,10 +2,12 @@
 
 const global = self
 
-self.importScripts("./analyzer.js")
+self.importScripts("./analyzer.bundle.js")
 
 self.onmessage = (message /*:MessageEvent*/) => {
-  const { bindings, globals, labels } = analyzer.analyzeSource(message.data.source)
+  const { bindings, globals, labels } = analyzer.analyzeSource(
+    message.data.source
+  )
 
   self.postMessage({
     id: message.data.id,
