@@ -1,5 +1,7 @@
 // @flow strict
 
+import { always } from "../../reflex/Basics.js"
+
 /*::
 export type Direction =
   | -1
@@ -13,7 +15,9 @@ export type Message =
   | { tag:"focus" }
   | { tag:"output", value:mixed }
   | { tag:"insert", value:{input:string}[] }
+  | { tag:"execute" }
   | { tag:"join", value:Direction}
+  | { tag:"print" }
 */
 
 export const change = (value /*:string*/) /*:Message*/ => ({
@@ -30,3 +34,11 @@ export const join = (dir /*:Direction*/) /*:Message*/ => ({
   tag: "join",
   value: dir
 })
+
+export const insert = (entries /*:{input:string}[]*/) /*:Message*/ => ({
+  tag: "insert",
+  value: entries
+})
+
+export const print = () /*:Message*/ => ({ tag: "print" })
+export const execute = () /*:Message*/ => ({ tag: "execute" })

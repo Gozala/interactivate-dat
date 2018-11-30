@@ -17,7 +17,6 @@ import CodeBlock from "../Element/CodeBlock.js"
 
 import * as Data from "./Cell/Data.js"
 import * as Inbox from "./Cell/Inbox.js"
-import * as Outbox from "./Cell/Outbox.js"
 import * as Decoder from "./Cell/Decoder.js"
 import * as Effect from "./Cell/Effect.js"
 
@@ -47,7 +46,7 @@ export const update = (message /*:Message*/, state /*:Model*/) => {
             inserts.push({ input })
           }
           const replace = send(Inbox.change(token))
-          const insert = send(Outbox.insert(inserts))
+          const insert = send(Inbox.insert(inserts))
           return [cell, batch(replace, insert)]
         }
       }
@@ -58,6 +57,7 @@ export const update = (message /*:Message*/, state /*:Model*/) => {
     case "leave": {
       return [state, nofx]
     }
+    case "execute":
     case "split": {
       return [
         state,
@@ -68,12 +68,15 @@ export const update = (message /*:Message*/, state /*:Model*/) => {
       return [state, nofx]
     }
     case "output": {
-      return [Data.updateOutput(message.value, state), nofx]
+      return [Data.updateOutput(message.value, state), send(Inbox.print())]
     }
     case "insert": {
       return [state, nofx]
     }
     case "remove": {
+      return [state, nofx]
+    }
+    case "print": {
       return [state, nofx]
     }
     default: {
@@ -103,7 +106,7 @@ export const view = (
 const viewOutput = (result, key) =>
   customElement("inspect-block", InspectBlock, [
     className("flex"),
-    property("source", result)
+    property("target", result)
   ])
 
 const viewCodeBlock = (input, key) =>

@@ -129,7 +129,8 @@ export const evaluate = future(async (url /*:string*/, code /*:string*/) => {
   } else {
     const sourceURL = `\n//# sourceURL=${url}`
     const refs = generateBindings(result.ok)
-    const code = `${source};${evalID}(${expression},${refs})${sourceURL}`
+    const out = expression === "" ? "void 0" : expression
+    const code = `${source};${evalID}(${out},${refs})${sourceURL}`
     const { bindings, value } = await sandbox.evaluate(evalID, code)
     Object.defineProperties(window, bindings)
     return value

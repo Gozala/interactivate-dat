@@ -2,6 +2,7 @@
 
 import * as Dict from "./Dictionary.js"
 import * as ImmutableArray from "./ImmutableArray.js"
+import { off } from "../codemirror/src/util/event.js"
 
 /*::
 export opaque type ID: string = string
@@ -180,6 +181,20 @@ export const selectByKey = /*::<a>*/ (
 ) /*:SelectionMap<a>*/ => {
   const selectionIndex = data.index.indexOf(key)
   return { ...data, selectionIndex }
+}
+
+export const keyByOffset = /*::<a>*/ (
+  offset /*:number*/,
+  key /*:ID*/,
+  { index } /*:SelectionMap<a>*/
+) /*:?ID*/ => {
+  const keyIndex = index.indexOf(key)
+  const targetIndex = keyIndex + offset
+  if (keyIndex < 0 || targetIndex < 0 || targetIndex >= index.length) {
+    return null
+  } else {
+    return index[targetIndex]
+  }
 }
 
 export const selectByOffset = /*::<a>*/ (

@@ -1,213 +1,235 @@
 // @flow strict
 
 import { never } from "../reflex/Basics.js"
-import { Inspector } from "../@observablehq/notebook-inspector/src/index.js"
+import * as Observable from "../@observablehq/notebook-inspector/src/index.js"
+import Style from "./InspectBlock.css.js"
+import { stat } from "../Effect/dat.js"
 
-export default class InpectBlock extends HTMLElement {
+export default class InpectBlock /*::<a>*/ extends HTMLElement {
   /*::
   root:ShadowRoot
-  inspectedValue:mixed
+  isConnected:boolean
+  select:HTMLSelectElement
+  state:?{value:a, inspectors:Inspectors<a>}
   output:?HTMLElement
-  inspector:{fulfilled(mixed):void, pending(mixed):void};
+  inspectors:Inspectors<a>
+  inspections:{[string]:{node:HTMLElement, inspector:Inspection<a>}}
+  options:{[string]:HTMLOptionElement}
+  activeInspector:?{node:HTMLElement, inspector:Inspection<a>}
+  handleEvent:Event => mixed
   */
   constructor() {
     super()
     this.root = this.attachShadow({ mode: "open", delegatesFocus: true })
-    this.inspectedValue = undefined
+    this.state = null
+    this.inspectors = {}
+    this.inspections = {}
+    this.options = {}
+    this.activeInspector = null
   }
   async connectedCallback() {
-    const style = this.ownerDocument.createElement("style")
-    style.textContent = `
-    :host {
-      overflow-x: auto;
-    }
+    const document = this.ownerDocument
+    const style = document.createElement("style")
+    style.textContent = Style
 
-    .observablehq--expanded,
-.observablehq--collapsed,
-.observablehq--function,
-.observablehq--import,
-.observablehq--string:before,
-.observablehq--string:after,
-.observablehq--gray {
-  color: var(--syntax_normal);
-}
-.observablehq--collapsed,
-.observablehq--inspect a {
-  cursor: pointer;
-}
-.observablehq--caret {
-  margin-right: 4px;
-  vertical-align: middle;
-}
-.observablehq--string-expand {
-  margin-left: 6px;
-  padding: 2px 6px;
-  border-radius: 2px;
-  font-size: 80%;
-  background: #eee;
-  color: #888;
-  cursor: pointer;
-  vertical-align: middle;
-}
-.observablehq--string-expand:hover {
-  color: #222;
-}
-.observablehq--field {
-  text-indent: -1em;
-  margin-left: 1em;
-}
-.observablehq--empty {
-  color: var(--syntax_comment);
-}
-a[href],
-.observablehq--keyword,
-.observablehq--blue {
-  color: #3182bd;
-}
-.observablehq--forbidden,
-.observablehq--pink {
-  color: #e377c2;
-}
-.observablehq--orange {
-  color: #e6550d;
-}
-.observablehq--null,
-.observablehq--undefined,
-.observablehq--boolean {
-  color: var(--syntax_atom);
-}
-.observablehq--bigint,
-.observablehq--number,
-.observablehq--date,
-.observablehq--regexp,
-.observablehq--symbol,
-.observablehq--green {
-  color: var(--syntax_number);
-}
-.observablehq--index,
-.observablehq--key {
-  color: var(--syntax_key);
-}
-.observablehq--empty {
-  font-style: oblique;
-}
-.observablehq--string,
-.observablehq--purple {
-  color: var(--syntax_string);
-}
-/* Note: Tachyons' dark-red */
-.observablehq--error,
-.observablehq--red {
-  color: #e7040f;
-}
-.observablehq {
-  position: relative;
-  min-height: 33px; /* Note: adjusted dynamically! */
-  padding: 0 14px 0 10px;
-  border-left: solid 4px transparent;
-  transition: border-left-color 250ms linear;
-}
-.observablehq--inspect {
-  font: var(--mono_fonts);
-  overflow-x: auto;
-  display: block;
-  padding: 6px 0;
-  white-space: pre;
-}
-.observablehq--error {
-  border-left-color: #e7040f;
-}
-.observablehq--error .observablehq--inspect {
-  word-break: break-all;
-  white-space: pre-wrap;
-}
-.observablehq--running,
-.observablehq--changed {
-  border-left-color: hsl(217, 13%, 70%);
-}
+    const select = document.createElement("select")
+    this.select = select
+    select.className = "selector"
+    this.root.appendChild(select)
 
-:host {
-  outline: none;
-  contain: content;
-}
-    `
-    const output = this.ownerDocument.createElement("output")
     this.root.appendChild(style)
-    this.output = this.root.appendChild(output)
-    this.inspector = new Inspector(output)
-    if (this.inspectedValue !== undefined) {
-      this.render()
+    this.root.addEventListener("change", this)
+    const { state } = this
+    if (state != null) {
+      this.state = null
+      this.update(state)
     }
   }
-  set source(value /*:mixed*/) {
-    const { output } = this
-    if (this.inspectedValue !== value) {
-      this.inspectedValue = value
-      if (output) {
-        this.render()
+  handleEvent(event /*:Event*/) {
+    switch (event.type) {
+      case "change": {
+        this.onChange()
       }
     }
   }
-  render() {
-    this.inspector.fulfilled(this.inspectedValue)
-    // const value = this.inspectedValue
-    // output.appendChild(inspect(value, false, false))
+  onChange() {
+    const { state } = this
+    if (state) {
+      this.updateValue(state.value)
+    }
+  }
+  set target(value /*:a*/) {
+    if (this.isConnected) {
+      const { state } = this
+      if (!state || state.value !== value) {
+        this.update({ value, inspectors: inspectorsFor(value) })
+      }
+    } else if (value !== undefined) {
+      this.state = { value, inspectors: inspectorsFor(value) }
+    }
+  }
+  update(newState /*:{value:a, inspectors:Inspectors<a>}*/) {
+    const { select, state, inspectors, inspections, options } = this
+    this.state = newState
+    if (state == null) {
+      const document = this.ownerDocument
+      const newInspector = newState.inspectors
+      for (const name of Object.keys(newInspector)) {
+        const option = select.appendChild(document.createElement("option"))
+        option.value = name
+        option.textContent = name
+        inspectors[name] = newInspector[name]
+        options[name] = option
+      }
+
+      this.updateValue(newState.value)
+    } else {
+      const { inspectors: oldInspectors, value: oldValue } = state
+      const { inspectors: newInspectors, value: newValue } = newState
+      if (oldInspectors != newInspectors) {
+        for (const name of Object.keys(newInspectors)) {
+          const newInspector = newInspectors[name]
+          const oldInspector = inspectors[name]
+          if (oldInspector == null) {
+            const option = select.appendChild(document.createElement("option"))
+            option.value = name
+            option.textContent = name
+            inspectors[name] = newInspector
+            options[name] = option
+          } else if (oldInspector !== newInspector) {
+            const inspection = inspections[name]
+            delete inspections[name]
+            inspectors[name] = newInspector
+            if (inspection) {
+              inspection.node.remove()
+            }
+          }
+        }
+
+        for (const name of Object.keys(oldInspectors)) {
+          if (newInspectors[name] == null) {
+            const inspection = inspections[name]
+            const option = options[name]
+            delete inspections[name]
+            delete inspectors[name]
+            delete options[name]
+            if (inspection) {
+              inspection.node.remove()
+            }
+            if (option) {
+              option.remove()
+            }
+          }
+        }
+      }
+
+      if (oldValue !== newValue) {
+        this.updateValue(newValue)
+      }
+    }
+  }
+  updateValue(value /*:a*/) {
+    const {
+      select,
+      inspectors,
+      inspections,
+      activeInspector,
+      ownerDocument
+    } = this
+    const name = select.value
+    const inspector = inspectors[name]
+    if (inspector) {
+      const inspection = inspections[name]
+      if (inspection) {
+        this.activeInspector = inspection
+        inspection.inspector.send(value)
+        inspection.node.classList.add("selected")
+      } else {
+        const inspection = inspector.spawn(value, ownerDocument)
+        const node = ownerDocument.createElement("section")
+        node.appendChild(inspection.render())
+        node.classList.add("selected")
+        const activeInspector = { node, inspector: inspection }
+        inspections[name] = activeInspector
+        this.root.appendChild(node)
+        this.activeInspector = activeInspector
+      }
+
+      if (activeInspector && activeInspector !== this.activeInspector) {
+        activeInspector.node.classList.remove("selected")
+      }
+    }
   }
 }
 
-// const { toString } = Object.prototype
+/*::
+interface Inspection<a> {
+  send(a):void;
+  render():Element;
+}
 
-// const inspect = (value, shallow, expand) => {
-//   switch (typeof value) {
-//     case "boolean": {
-//       return plain(String(value), "boolean")
-//     }
-//     case "undefined": {
-//       return plain("undefined", "undefined")
-//     }
-//     case "number": {
-//       return value === 0 && 1 / value < 0
-//         ? plain("-0", "number")
-//         : plain(String(value), "number")
-//     }
-//     case "bigint": {
-//       return plain(value + "n", "bigint")
-//     }
-//     case "symbol": {
-//       return plain(formatSymbol(value), "symbol")
-//     }
-//     case "function": {
-//       return plain(inspectFunction(value), "function")
-//     }
-//     case "string": {
-//       return plain(formatString(value, shallow, expand), "string")
-//     }
-//     default: {
-//       if (value === null) {
-//         return plain("null", "null")
-//       }
-//       if (value instanceof Date) {
-//         return plain(formatDate(value), "date")
-//       }
-//       if (value === FORBIDDEN) {
-//         return plain("[forbidden]", "forbidden")
-//       }
-//       switch (toString.call(value)) {
-//         case "[object RegExp]": {
-//           return plain(formatRegExp(value), "regexp")
-//         }
-//         case "[object Error]":
-//         case "[object DOMException]": {
-//           return plain(formatError(value), "error")
-//         }
-//         default: {
-//           const inpsect = expand ? inspectExpanded : inspectCollapsed
-//           return inspect(value, shallow)
-//         }
-//       }
-//     }
-//   }
-// }
+interface Inspector<a> {
+  spawn(a, Document):Inspection<a>;
+}
+
+type Inspectors<a> = {
+  [string]:Inspector<a>;
+}
+
+export opaque type Projeciton<a> = HTMLElement
+
+interface Projector<a> {
+  iterate(AsyncIterator<a>):Projeciton<a>;
+  inspect(a):Projeciton<a>;
+  html():Projeciton<a>;
+  svg():Projeciton<a>;
+  md():Projeciton<a>;
+}
+
+interface Projections<a> {
+  [string]:(a, Projector<a>) => Projeciton<a>;
+}
+*/
+
+const inspectors = Symbol.for("inspectors")
+const inspectorsFor = /*::<a>*/ (value /*:a*/) /*:Inspectors<a>*/ => {
+  const $inspectors /*:any*/ = inspectors
+  const $value /*:any*/ = value
+  const ownInspectors = $value && $value[$inspectors]
+  if (ownInspectors && typeof ownInspectors === "object") {
+    return { ...ownInspectors, ...baseInspectors }
+  } else {
+    return baseInspectors
+  }
+}
+
+class ValueInspection extends Observable.Inspector {
+  static spawn(
+    value /*:mixed*/,
+    document /*:Document*/
+  ) /*:Inspection<mixed>*/ {
+    const inspection = new ValueInspection(document.createElement("output"))
+    inspection.send(value)
+    return inspection
+  }
+  /*::
+  node:Element
+  */
+  constructor(node /*:Element*/) {
+    super(node)
+    this.node = node
+  }
+  send(value /*:mixed*/) /*:void*/ {
+    this.fulfilled(value)
+  }
+  render() /*:Element*/ {
+    return this.node
+  }
+}
+
+const baseInspectors /*:Inspectors<any>*/ = {
+  Inspector: ValueInspection
+}
 
 const plain = (formattedValue, type) => {
   const code = document.createElement("code")

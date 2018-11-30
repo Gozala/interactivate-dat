@@ -1,6 +1,6 @@
 // @flow strict
 
-import { nofx, fx, batch } from "../reflex/Effect.js"
+import { nofx, fx, send, batch } from "../reflex/Effect.js"
 import {
   text,
   main,
@@ -64,7 +64,9 @@ export const update = (message /*:Message*/, state /*:Model*/) => {
   switch (message.tag) {
     case "onLoaded": {
       const { url, content, isOwner } = message.value
-      return [Data.init(url, isOwner, content), nofx]
+      const state = Data.init(url, isOwner, content)
+      const id = Data.firstID(state)
+      return [state, id ? send(Inbox.execute(id)) : nofx]
     }
     case "onLoadError": {
       return [Data.failLoad(state), nofx]
@@ -72,6 +74,11 @@ export const update = (message /*:Message*/, state /*:Model*/) => {
     case "onCell": {
       const [id, payload] = message.value
       return updateCell(state, id, payload)
+    }
+    case "onCellChanged": {
+      const id = message.value
+      const nextID = Data.idByOffset(1, id, state)
+      return [state, nextID ? send(Inbox.execute(nextID)) : nofx]
     }
     default: {
       return never(message)
@@ -100,6 +107,16 @@ const updateCell = (state, id, message) => {
     case "leave": {
       return setSelection(message.value, state)
     }
+    case "execute": {
+      const targetCell = Data.cellByID(id, state)
+      if (targetCell) {
+        const [cell, fx] = Cell.update(message, targetCell)
+        const data = Data.replaceCell(id, cell, state)
+        return [data, fx.map(Inbox.onCell(id))]
+      } else {
+        return [state, nofx]
+      }
+    }
     case "split": {
       const targetCell = Data.cellByID(id, state)
       if (targetCell) {
@@ -127,6 +144,9 @@ const updateCell = (state, id, message) => {
     }
     case "join": {
       return [Data.joinCell(id, message.value, state), nofx]
+    }
+    case "print": {
+      return [state, nofx]
     }
     default: {
       return never(message)
@@ -198,7 +218,7 @@ const viewHeader = state =>
 const viewDocument = state =>
   keyedNode(
     "main",
-    [className("relative mh0-ns nr3 nl3 mt4")],
+    [className("relative mh0-ns nr3 nl3 mt4 mb4")],
     Data.cells(state).map(viewCell)
   )
 

@@ -175,6 +175,12 @@ export const lastCell = (state /*:Model*/) /*:?Cell.Model*/ =>
 export const firstCell = (state /*:Model*/) /*:?Cell.Model*/ =>
   SelectionMap.valueByIndex(0, state.cells)
 
+export const firstID = (state /*:Model*/) /*:?ID*/ =>
+  SelectionMap.keyByIndex(0, state.cells)
+
+export const lastID = (state /*:Model*/) /*:?ID*/ =>
+  SelectionMap.keyByIndex(-1, state.cells)
+
 export const textInput = (state /*:Model*/) /*:string*/ => {
   const chunks = []
   for (const value of SelectionMap.values(state.cells)) {
@@ -182,3 +188,9 @@ export const textInput = (state /*:Model*/) /*:string*/ => {
   }
   return chunks.join("\n\n")
 }
+
+export const idByOffset = (
+  offset /*:number*/,
+  id /*:ID*/,
+  state /*:Model*/
+) /*:?ID*/ => SelectionMap.keyByOffset(offset, id, state.cells)
